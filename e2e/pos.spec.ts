@@ -8,6 +8,31 @@ async function login(page: import("@playwright/test").Page, email: string, passw
   await expect(page).toHaveURL(/\/kasir|\/admin|\/owner/, { timeout: 20000 })
 }
 
+test.describe("Returning signed-in users", () => {
+  const password = process.env.E2E_PASSWORD ?? "Pointofsale123!"
+
+  test("signed-in admin visiting / is redirected to the dashboard", async ({ page }) => {
+    await login(page, process.env.E2E_EMAIL ?? "admin@pointofsale.id", password)
+
+    await page.goto("/")
+    await expect(page).toHaveURL(/\/admin$/)
+    await expect(page.getByRole("heading", { name: /Ringkasan/ })).toBeVisible()
+  })
+
+  test("signed-in admin re-opening /login is sent to the dashboard", async ({ page }) => {
+    await login(page, process.env.E2E_EMAIL ?? "admin@pointofsale.id", password)
+
+    await page.goto("/login")
+    await expect(page).toHaveURL(/\/admin$/)
+    await expect(page.getByRole("heading", { name: /Ringkasan/ })).toBeVisible()
+  })
+
+  test("signed-out user visiting / is redirected to /login", async ({ page }) => {
+    await page.goto("/")
+    await expect(page).toHaveURL(/\/login/)
+  })
+})
+
 test.describe("Auth guard", () => {
   test("redirects unauthenticated user from /kasir to /login", async ({ page }) => {
     await page.goto("/kasir")
