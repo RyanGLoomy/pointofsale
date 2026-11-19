@@ -5,8 +5,9 @@ import { redirect } from "next/navigation"
 export default async function OwnerPage() {
   const session = await auth()
   const userId = session?.user?.id
+  const role = session?.user?.role
 
-  if (!userId) {
+  if (!userId || role !== "OWNER") {
     redirect("/login")
   }
 

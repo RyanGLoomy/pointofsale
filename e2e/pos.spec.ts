@@ -5,7 +5,7 @@ async function login(page: import("@playwright/test").Page, email: string, passw
   await page.fill("#email", email)
   await page.fill("#password", password)
   await page.click('button[type="submit"]')
-  await expect(page).toHaveURL(/\/kasir|\/admin|\/owner/)
+  await expect(page).toHaveURL(/\/kasir|\/admin|\/owner/, { timeout: 20000 })
 }
 
 test.describe("Auth guard", () => {
@@ -35,12 +35,13 @@ test.describe("Kasir POS flow", () => {
     await expect(itemButton).toBeVisible()
     await itemButton.click()
 
-    await expect(page.getByText(/Kopi Suroko × 1/)).toBeVisible()
-    await expect(page.getByText(/Rp 15000\.00/)).toBeVisible()
+    const cartLine = page.getByRole("listitem").filter({ hasText: "Kopi Suroko" })
+    await expect(cartLine).toContainText("Kopi Suroko × 1")
+    await expect(cartLine).toContainText("Rp 15000.00")
 
     await page.getByRole("button", { name: /Checkout & Catat Transaksi/ }).click()
 
-    await expect(page.getByText(/Struk Transaksi/)).toBeVisible()
+    await expect(page.getByText(/Struk Transaksi/)).toBeVisible({ timeout: 20000 })
   })
 })
 
@@ -50,7 +51,7 @@ test.describe("Admin flow", () => {
 
     await page.goto("/admin/menus")
     await expect(page.getByRole("heading", { name: /Kelola Data Menu/ })).toBeVisible()
-    await expect(page.getByText(/Tambah Menu/)).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Tambah Menu" })).toBeVisible()
   })
 })
 

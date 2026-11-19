@@ -1,7 +1,17 @@
+import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { redirect } from "next/navigation"
 import { MenuManager, type MenuRow } from "@/components/MenuManager"
 
 export default async function AdminMenusPage() {
+  const session = await auth()
+  const userId = session?.user?.id
+  const role = session?.user?.role
+
+  if (!userId || (role !== "ADMIN" && role !== "OWNER")) {
+    redirect("/login")
+  }
+
   const menus = await prisma.menu.findMany({
     orderBy: { name: "asc" },
   })
