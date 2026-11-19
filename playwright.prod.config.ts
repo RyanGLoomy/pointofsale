@@ -6,7 +6,7 @@ export default defineConfig({
   retries: 0,
   reporter: "html",
   use: {
-    baseURL: process.env.BASE_URL ?? "https://pointofsale-ruddy.vercel.app",
+    baseURL: process.env.BASE_URL ?? "https://pointofsale-kasir.vercel.app",
     trace: "on-first-retry",
   },
   projects: [
