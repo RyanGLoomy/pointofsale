@@ -22,14 +22,14 @@ test.describe("Auth guard", () => {
 
 test.describe("Kasir POS flow", () => {
   test("kasir can login and see the POS terminal", async ({ page }) => {
-    await login(page, process.env.E2E_EMAIL ?? "kasir@pointofsale.id", process.env.E2E_PASSWORD ?? "Kasir123!")
+    await login(page, process.env.E2E_EMAIL ?? "kasir@pointofsale.id", process.env.E2E_PASSWORD ?? "Pointofsale123!")
 
     await expect(page).toHaveURL(/\/kasir/)
     await expect(page.getByRole("heading", { name: /Kasir/ })).toBeVisible()
   })
 
   test("kasir can add item to cart and checkout", async ({ page }) => {
-    await login(page, process.env.E2E_EMAIL ?? "kasir@pointofsale.id", process.env.E2E_PASSWORD ?? "Kasir123!")
+    await login(page, process.env.E2E_EMAIL ?? "kasir@pointofsale.id", process.env.E2E_PASSWORD ?? "Pointofsale123!")
 
     const itemButton = page.getByRole("button", { name: /Kopi Suroko/ }).first()
     await expect(itemButton).toBeVisible()
@@ -47,7 +47,7 @@ test.describe("Kasir POS flow", () => {
 
 test.describe("Admin flow", () => {
   test("admin can open menu management", async ({ page }) => {
-    await login(page, process.env.E2E_EMAIL ?? "admin@pointofsale.id", process.env.E2E_PASSWORD ?? "Admin123!")
+    await login(page, process.env.E2E_EMAIL ?? "admin@pointofsale.id", process.env.E2E_PASSWORD ?? "Pointofsale123!")
 
     await page.goto("/admin/menus")
     await expect(page.getByRole("heading", { name: /Kelola Data Menu/ })).toBeVisible()
@@ -57,7 +57,7 @@ test.describe("Admin flow", () => {
 
 test.describe("Owner flow", () => {
   test("owner can open sales report", async ({ page }) => {
-    await login(page, process.env.E2E_EMAIL ?? "owner@pointofsale.id", process.env.E2E_PASSWORD ?? "Owner123!")
+    await login(page, process.env.E2E_EMAIL ?? "owner@pointofsale.id", process.env.E2E_PASSWORD ?? "Pointofsale123!")
 
     await page.goto("/owner")
     await expect(page.getByRole("heading", { name: /Owner — Laporan Penjualan/ })).toBeVisible()
