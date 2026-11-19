@@ -3,27 +3,27 @@ import bcrypt from "bcryptjs"
 
 const prisma = new PrismaClient()
 
+const DEFAULT_PASSWORD = "Pointofsale123!"
+
 async function main() {
-  const adminPasswordHash = await bcrypt.hash("Admin123!", 10)
-  const ownerPasswordHash = await bcrypt.hash("Owner123!", 10)
-  const kasirPasswordHash = await bcrypt.hash("Kasir123!", 10)
+  const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10)
 
   await prisma.user.upsert({
     where: { email: "admin@pointofsale.id" },
-    update: { name: "Admin", password: adminPasswordHash, role: "ADMIN", active: true },
-    create: { email: "admin@pointofsale.id", name: "Admin", password: adminPasswordHash, role: "ADMIN", active: true },
+    update: { name: "Admin", password: passwordHash, role: "ADMIN", active: true },
+    create: { email: "admin@pointofsale.id", name: "Admin", password: passwordHash, role: "ADMIN", active: true },
   })
 
   await prisma.user.upsert({
     where: { email: "owner@pointofsale.id" },
-    update: { name: "Owner", password: ownerPasswordHash, role: "OWNER", active: true },
-    create: { email: "owner@pointofsale.id", name: "Owner", password: ownerPasswordHash, role: "OWNER", active: true },
+    update: { name: "Owner", password: passwordHash, role: "OWNER", active: true },
+    create: { email: "owner@pointofsale.id", name: "Owner", password: passwordHash, role: "OWNER", active: true },
   })
 
   await prisma.user.upsert({
     where: { email: "kasir@pointofsale.id" },
-    update: { name: "Kasir", password: kasirPasswordHash, role: "KASIR", active: true },
-    create: { email: "kasir@pointofsale.id", name: "Kasir", password: kasirPasswordHash, role: "KASIR", active: true },
+    update: { name: "Kasir", password: passwordHash, role: "KASIR", active: true },
+    create: { email: "kasir@pointofsale.id", name: "Kasir", password: passwordHash, role: "KASIR", active: true },
   })
 
   const sampleMenus = [
