@@ -1,8 +1,16 @@
 "use client"
 
 import { useState } from "react"
+import { Save, X } from "lucide-react"
 import { createMenu, setMenuActive, updateMenu } from "@/actions/menu"
 import type { FormEvent } from "react"
+import { formatRupiah } from "@/lib/format"
+import { Badge, type BadgeTone } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Field, Input } from "@/components/ui/input"
+import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table"
 
 export interface MenuRow {
   id: string
@@ -16,6 +24,12 @@ export interface MenuRow {
 
 interface MenuManagerProps {
   menus: MenuRow[]
+}
+
+function stockTone(stock: number): BadgeTone {
+  if (stock <= 0) return "danger"
+  if (stock <= 5) return "warning"
+  return "neutral"
 }
 
 export function MenuManager({ menus }: MenuManagerProps) {
@@ -49,8 +63,8 @@ export function MenuManager({ menus }: MenuManagerProps) {
     setError(null)
   }
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     setError(null)
     setNotice(null)
 
@@ -102,94 +116,161 @@ export function MenuManager({ menus }: MenuManagerProps) {
     }
   }
 
+  const activeCount = menus.filter((menu) => menu.active).length
+
   return (
-    <div className="space-y-6">
-      <form onSubmit={onSubmit} className="rounded-xl border bg-white p-4">
-        <h2 className="font-semibold">{editing ? "Edit Menu" : "Tambah Menu"}</h2>
+    <div className="mt-6 grid items-start gap-5 xl:grid-cols-[380px_minmax(0,1fr)]">
+      <Card className="xl:sticky xl:top-6 xl:self-start">
+        <CardHeader>
+          <div>
+            <CardTitle>{editing ? "Edit Menu" : "Tambah Menu"}</CardTitle>
+            <p className="mt-0.5 text-[11px] text-muted">
+              {editing ? "Perbarui detail menu yang dipilih." : "Daftarkan menu baru ke katalog kasir."}
+            </p>
+          </div>
+          {editing ? <Badge tone="ember">Mode edit</Badge> : null}
+        </CardHeader>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium">Nama</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Kategori</label>
-            <input value={category} onChange={(e) => setCategory(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Harga</label>
-            <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" step="0.01" min="0" className="mt-1 w-full rounded-md border px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Stok</label>
-            <input value={stock} onChange={(e) => setStock(e.target.value)} type="number" min="0" className="mt-1 w-full rounded-md border px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Deskripsi</label>
-            <input value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2 text-sm" />
-          </div>
-        </div>
+        <form onSubmit={onSubmit} className="space-y-3 p-4">
+          <Field label="Nama" htmlFor="menu-name">
+            <Input
+              id="menu-name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Contoh: Kopi Suroko"
+            />
+          </Field>
 
-        {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
-        {notice ? <p className="mt-3 text-sm text-emerald-700">{notice}</p> : null}
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Harga" htmlFor="menu-price">
+              <Input
+                id="menu-price"
+                value={price}
+                onChange={(event) => setPrice(event.target.value)}
+                type="number"
+                step="1"
+                min="0"
+              />
+            </Field>
+            <Field label="Stok" htmlFor="menu-stock">
+              <Input
+                id="menu-stock"
+                value={stock}
+                onChange={(event) => setStock(event.target.value)}
+                type="number"
+                min="0"
+              />
+            </Field>
+          </div>
 
-        <div className="mt-4 flex gap-2">
-          <button type="submit" className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white">
-            {editing ? "Simpan Perubahan" : "Tambah Menu"}
-          </button>
-          {editing ? (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="rounded-md border px-3 py-2 text-sm font-medium"
-            >
-              Batal
-            </button>
+          <Field label="Kategori" htmlFor="menu-category">
+            <Input
+              id="menu-category"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              placeholder="Minuman / Makanan"
+            />
+          </Field>
+
+          <Field label="Deskripsi" htmlFor="menu-description">
+            <Input
+              id="menu-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Deskripsi singkat"
+            />
+          </Field>
+
+          {error ? (
+            <p className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+              {error}
+            </p>
           ) : null}
-        </div>
-      </form>
+          {notice ? (
+            <p className="rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-xs text-success">
+              {notice}
+            </p>
+          ) : null}
 
-      <div className="rounded-xl border bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left">
-              <th className="p-3">Nama</th>
-              <th className="p-3">Kategori</th>
-              <th className="p-3">Harga</th>
-              <th className="p-3">Stok</th>
-              <th className="p-3">Status</th>
-              <th className="p-3">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {menus.map((menu) => (
-              <tr key={menu.id} className="border-t">
-                <td className="p-3">{menu.name}</td>
-                <td className="p-3">{menu.category ?? "-"}</td>
-                <td className="p-3">Rp {menu.price.toFixed(2)}</td>
-                <td className="p-3">{menu.stock}</td>
-                <td className="p-3">{menu.active ? "Aktif" : "Nonaktif"}</td>
-                <td className="p-3">
-                  <button
-                    type="button"
-                    onClick={() => startEdit(menu)}
-                    className="mr-2 rounded-md border px-2 py-1 text-xs"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toggleActive(menu)}
-                    className="rounded-md border px-2 py-1 text-xs"
-                  >
-                    {menu.active ? "Nonaktifkan" : "Aktifkan"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          <div className="flex gap-2 pt-1">
+            <Button type="submit" className="flex-1">
+              <Save className="h-4 w-4" />
+              {editing ? "Simpan Perubahan" : "Tambah Menu"}
+            </Button>
+            {editing ? (
+              <Button variant="secondary" onClick={resetForm}>
+                <X className="h-4 w-4" />
+                Batal
+              </Button>
+            ) : null}
+          </div>
+        </form>
+      </Card>
+
+      <Card className="overflow-hidden">
+        <CardHeader>
+          <div>
+            <CardTitle>Daftar Menu</CardTitle>
+            <p className="mt-0.5 text-[11px] text-muted">{menus.length} menu terdaftar</p>
+          </div>
+          <Badge tone="success">{activeCount} aktif</Badge>
+        </CardHeader>
+
+        {menus.length === 0 ? (
+          <EmptyState
+            icon={Save}
+            title="Belum ada menu"
+            description="Tambahkan menu pertama lewat formulir di samping."
+          />
+        ) : (
+          <Table>
+            <THead>
+              <TR>
+                <TH>Nama</TH>
+                <TH>Kategori</TH>
+                <TH>Harga</TH>
+                <TH>Stok</TH>
+                <TH>Status</TH>
+                <TH className="text-right">Aksi</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {menus.map((menu) => (
+                <TR key={menu.id}>
+                  <TD>
+                    <div className="font-semibold text-ink">{menu.name}</div>
+                    {menu.description ? (
+                      <div className="mt-0.5 text-[11px] text-muted">{menu.description}</div>
+                    ) : null}
+                  </TD>
+                  <TD>
+                    <span className="text-xs text-muted">{menu.category ?? "Umum"}</span>
+                  </TD>
+                  <TD className="font-semibold tabular-nums">{formatRupiah(menu.price)}</TD>
+                  <TD>
+                    <Badge tone={stockTone(menu.stock)}>{menu.stock}</Badge>
+                  </TD>
+                  <TD>
+                    <Badge tone={menu.active ? "success" : "neutral"}>
+                      {menu.active ? "Aktif" : "Nonaktif"}
+                    </Badge>
+                  </TD>
+                  <TD>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="secondary" size="sm" onClick={() => startEdit(menu)}>
+                        Edit
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => toggleActive(menu)}>
+                        {menu.active ? "Nonaktifkan" : "Aktifkan"}
+                      </Button>
+                    </div>
+                  </TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+        )}
+      </Card>
     </div>
   )
 }

@@ -1,40 +1,103 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-ember: var(--ember);
+  --color-ember-strong: var(--ember-strong);
+  --color-ember-soft: var(--ember-soft);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --font-sans: var(--font-plus-jakarta);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --bg: #090b0f;
+  --surface: #11141a;
+  --surface-2: #171b22;
+  --line: #252b35;
+  --ink: #eef1f4;
+  --muted: #97a0ac;
+  --ember: #ff7a1a;
+  --ember-strong: #ff9444;
+  --ember-soft: #2b1a0d;
+  --success: #34d399;
+  --danger: #fb7185;
+  --warning: #fbbf24;
+  --info: #60a5fa;
+  color-scheme: dark;
+}
+
+html {
+  min-height: 100%;
+  background: var(--bg);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(900px 520px at 88% -12%, rgba(255, 122, 26, 0.1), transparent 62%),
+    radial-gradient(760px 480px at -12% 8%, rgba(96, 165, 250, 0.06), transparent 58%);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(255, 122, 26, 0.35);
+  color: #fff;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2c333e transparent;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 @media print {
+  body {
+    background: #fff;
+  }
+
   body * {
     visibility: hidden;
   }
+
   .receipt,
   .receipt * {
     visibility: visible;
   }
+
   .receipt {
     position: absolute;
     inset: 0 auto auto 0;
+    width: 80mm;
+    border: 0;
+    border-radius: 0;
+    background: #fff;
+    color: #111;
+    box-shadow: none;
+  }
+
+  .no-print {
+    display: none !important;
   }
 }

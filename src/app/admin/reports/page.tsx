@@ -1,80 +1,98 @@
+import { PackageSearch } from "lucide-react"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/auth"
-import { redirect } from "next/navigation"
+import { formatFullDate, formatRupiah } from "@/lib/format"
+import { buildDailyTotals, buildItemQuantities, toAmount } from "@/lib/reports"
+import { requireUser } from "@/lib/session"
+import { AppShell } from "@/components/shell/AppShell"
+import { PageHeader } from "@/components/shell/PageHeader"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table"
+import { KpiGrid } from "@/components/reports/KpiGrid"
+import { SalesChart } from "@/components/reports/SalesChart"
+import { TopMenusCard } from "@/components/reports/TopMenusCard"
 
 export default async function AdminReportsPage() {
-  const session = await auth()
-  const userId = session?.user?.id
-  const role = session?.user?.role
-
-  if (!userId || (role !== "ADMIN" && role !== "OWNER")) {
-    redirect("/login")
-  }
+  const user = await requireUser(["ADMIN", "OWNER"])
 
   const transactions = await prisma.transaction.findMany({
     orderBy: { createdAt: "desc" },
   })
 
-  const totalRevenue = transactions.reduce((sum, tx) => sum + Number(tx.total), 0)
+  const totalRevenue = transactions.reduce((sum, tx) => sum + toAmount(tx.total), 0)
+  const daily = buildDailyTotals(transactions)
+  const quantities = buildItemQuantities(transactions)
+  const itemCount = Array.from(quantities.values()).reduce((sum, quantity) => sum + quantity, 0)
+  const average = transactions.length > 0 ? totalRevenue / transactions.length : 0
 
-  const totalTransactions = transactions.length
+  const topEntries = Array.from(quantities.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
 
-  const salesByDay = transactions.reduce<Record<string, number>>((acc, tx) => {
-    const day = new Date(tx.createdAt).toISOString().slice(0, 10)
-    acc[day] = (acc[day] ?? 0) + Number(tx.total)
-    return acc
-  }, {})
+  const topMenus = await prisma.menu.findMany({
+    where: { id: { in: topEntries.map(([menuId]) => menuId) } },
+    select: { id: true, name: true },
+  })
 
-  const topItems = transactions.reduce<Record<string, number>>((acc, tx) => {
-    const items = tx.items as { items?: { menuId: string; quantity: number }[] } | null
-    for (const item of items?.items ?? []) {
-      acc[item.menuId] = (acc[item.menuId] ?? 0) + item.quantity
-    }
-    return acc
-  }, {})
+  const topRows = topEntries.map(([menuId, quantity]) => ({
+    menuId,
+    name: topMenus.find((menu) => menu.id === menuId)?.name ?? "Menu dihapus",
+    quantity,
+  }))
 
   return (
-    <main className="min-h-screen bg-slate-50 p-4">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="text-2xl font-bold">Laporan Penjualan — Admin</h1>
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border bg-white p-4">
-            <div className="text-sm text-slate-500">Total Penjualan</div>
-            <div className="mt-1 text-xl font-bold">Rp {totalRevenue.toFixed(2)}</div>
-          </div>
-          <div className="rounded-xl border bg-white p-4">
-            <div className="text-sm text-slate-500">Jumlah Transaksi</div>
-            <div className="mt-1 text-xl font-bold">{totalTransactions}</div>
-          </div>
-          <div className="rounded-xl border bg-white p-4">
-            <div className="text-sm text-slate-500">Jumlah Item Terjual</div>
-            <div className="mt-1 text-xl font-bold">{Object.keys(topItems).length}</div>
-          </div>
+    <AppShell user={user}>
+      <PageHeader
+        eyebrow="Analitik"
+        title="Laporan Penjualan"
+        description="Ringkasan performa penjualan berdasarkan transaksi yang tercatat."
+        actions={<Badge tone="ember">Semua waktu</Badge>}
+      />
+
+      <div className="mt-6 space-y-4">
+        <KpiGrid
+          totalRevenue={totalRevenue}
+          transactionCount={transactions.length}
+          itemCount={itemCount}
+          average={average}
+        />
+
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+          <SalesChart data={daily} />
+
+          <TopMenusCard rows={topRows} />
         </div>
 
-        <div className="mt-6 rounded-xl border bg-white">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left">
-                <th className="p-3">Tanggal</th>
-                <th className="p-3">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(salesByDay)
-                .sort()
-                .map(([day, total]) => (
-                  <tr key={day} className="border-t">
-                    <td className="p-3">{day}</td>
-                    <td className="p-3">Rp {total.toFixed(2)}</td>
-                  </tr>
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <CardTitle>Rekap Harian</CardTitle>
+            <Badge tone="neutral">{daily.length} hari</Badge>
+          </CardHeader>
+          {daily.length === 0 ? (
+            <EmptyState icon={PackageSearch} title="Belum ada rekap" description="Rekap muncul setelah ada transaksi." />
+          ) : (
+            <Table className="min-w-[420px]">
+              <THead>
+                <TR>
+                  <TH>Tanggal</TH>
+                  <TH className="text-right">Total Penjualan</TH>
+                </TR>
+              </THead>
+              <TBody>
+                {daily.map((entry) => (
+                  <TR key={entry.day}>
+                    <TD className="text-muted">{formatFullDate(`${entry.day}T00:00:00Z`)}</TD>
+                    <TD className="text-right font-semibold tabular-nums">{formatRupiah(entry.total)}</TD>
+                  </TR>
                 ))}
-            </tbody>
-          </table>
-        </div>
+              </TBody>
+            </Table>
+          )}
+        </Card>
       </div>
-    </main>
+    </AppShell>
   )
 }
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic"

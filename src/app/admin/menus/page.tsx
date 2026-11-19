@@ -1,16 +1,12 @@
-import { auth } from "@/auth"
-import { prisma } from "@/lib/prisma"
-import { redirect } from "next/navigation"
 import { MenuManager, type MenuRow } from "@/components/MenuManager"
+import { AppShell } from "@/components/shell/AppShell"
+import { PageHeader } from "@/components/shell/PageHeader"
+import { Badge } from "@/components/ui/badge"
+import { prisma } from "@/lib/prisma"
+import { requireUser } from "@/lib/session"
 
 export default async function AdminMenusPage() {
-  const session = await auth()
-  const userId = session?.user?.id
-  const role = session?.user?.role
-
-  if (!userId || (role !== "ADMIN" && role !== "OWNER")) {
-    redirect("/login")
-  }
+  const user = await requireUser(["ADMIN", "OWNER"])
 
   const menus = await prisma.menu.findMany({
     orderBy: { name: "asc" },
@@ -27,15 +23,16 @@ export default async function AdminMenusPage() {
   }))
 
   return (
-    <main className="min-h-screen bg-slate-50 p-4">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="text-2xl font-bold">Kelola Data Menu — Admin</h1>
-        <div className="mt-6">
-          <MenuManager menus={rows} />
-        </div>
-      </div>
-    </main>
+    <AppShell user={user}>
+      <PageHeader
+        eyebrow="Katalog"
+        title="Kelola Data Menu"
+        description="Atur nama, harga, stok, dan status ketersediaan setiap menu."
+        actions={<Badge tone="ember">{rows.length} menu</Badge>}
+      />
+      <MenuManager menus={rows} />
+    </AppShell>
   )
 }
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic"

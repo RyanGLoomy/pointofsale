@@ -1,15 +1,18 @@
+import { ReceiptText, Users, Wallet } from "lucide-react"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/auth"
-import { redirect } from "next/navigation"
+import { formatDateTime, formatRupiah } from "@/lib/format"
+import { requireUser } from "@/lib/session"
+import { AppShell } from "@/components/shell/AppShell"
+import { PageHeader } from "@/components/shell/PageHeader"
+import { Badge } from "@/components/ui/badge"
+import { PaymentMethodBadge } from "@/components/payment-method-badge"
+import { Card } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
+import { StatCard } from "@/components/ui/stat-card"
+import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table"
 
 export default async function AdminTransactionsPage() {
-  const session = await auth()
-  const userId = session?.user?.id
-  const role = session?.user?.role
-
-  if (!userId || (role !== "ADMIN" && role !== "OWNER")) {
-    redirect("/login")
-  }
+  const user = await requireUser(["ADMIN", "OWNER"])
 
   const transactions = await prisma.transaction.findMany({
     orderBy: { createdAt: "desc" },
@@ -20,44 +23,65 @@ export default async function AdminTransactionsPage() {
     },
   })
 
+  const totalRevenue = transactions.reduce((sum, tx) => sum + Number(tx.total), 0)
+  const cashierCount = new Set(transactions.map((tx) => tx.userId)).size
+
   return (
-    <main className="min-h-screen bg-slate-50 p-4">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="text-2xl font-bold">Riwayat Transaksi — Admin</h1>
-        <div className="mt-6 rounded-xl border bg-white">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left">
-                <th className="p-3">Waktu</th>
-                <th className="p-3">Kasir</th>
-                <th className="p-3">Order</th>
-                <th className="p-3">Total</th>
-                <th className="p-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((tx) => (
-                <tr key={tx.id} className="border-t">
-                  <td className="p-3">{new Date(tx.createdAt).toLocaleString()}</td>
-                  <td className="p-3">{tx.user?.name ?? tx.user?.email ?? "-"}</td>
-                  <td className="p-3">{tx.orderId ?? "-"}</td>
-                  <td className="p-3">Rp {Number(tx.total).toFixed(2)}</td>
-                  <td className="p-3">{"—"} </td>
-                </tr>
-              ))}
-              {transactions.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-3 text-center text-slate-500">
-                    Belum ada transaksi.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
+    <AppShell user={user}>
+      <PageHeader
+        eyebrow="Riwayat"
+        title="Riwayat Transaksi"
+        description="Semua pembayaran yang tercatat di sistem, terbaru di atas."
+        actions={<Badge tone="neutral">{transactions.length} transaksi</Badge>}
+      />
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <StatCard label="Total Transaksi" value={transactions.length} icon={ReceiptText} />
+        <StatCard label="Total Penjualan" value={formatRupiah(totalRevenue)} icon={Wallet} accent />
+        <StatCard label="Kasir Terlibat" value={cashierCount} icon={Users} />
       </div>
-    </main>
+
+      <Card className="mt-4 overflow-hidden">
+        {transactions.length === 0 ? (
+          <EmptyState
+            icon={ReceiptText}
+            title="Belum ada transaksi"
+            description="Transaksi dari terminal kasir akan muncul di sini."
+          />
+        ) : (
+          <Table>
+            <THead>
+              <TR>
+                <TH>Waktu</TH>
+                <TH>Kasir</TH>
+                <TH>Order</TH>
+                <TH>Metode</TH>
+                <TH className="text-right">Total</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {transactions.map((tx) => (
+                <TR key={tx.id}>
+                  <TD className="whitespace-nowrap text-xs text-muted">{formatDateTime(tx.createdAt)}</TD>
+                  <TD>
+                    <div className="font-semibold text-ink">{tx.user?.name ?? tx.user?.email ?? "-"}</div>
+                    <div className="text-[11px] capitalize text-muted">{tx.user?.role.toLowerCase() ?? "-"}</div>
+                  </TD>
+                  <TD className="font-mono text-[11px] text-muted">
+                    {tx.orderId ? tx.orderId.slice(0, 8).toUpperCase() : "-"}
+                  </TD>
+                  <TD>
+                    <PaymentMethodBadge method={tx.paymentMethod} />
+                  </TD>
+                  <TD className="text-right font-bold tabular-nums">{formatRupiah(Number(tx.total))}</TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+        )}
+      </Card>
+    </AppShell>
   )
 }
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic"

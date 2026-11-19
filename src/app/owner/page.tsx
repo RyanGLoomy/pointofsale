@@ -1,15 +1,21 @@
+import Link from "next/link"
+import { ReceiptText } from "lucide-react"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/auth"
-import { redirect } from "next/navigation"
+import { formatDateTime, formatRupiah } from "@/lib/format"
+import { buildDailyTotals, buildItemQuantities, toAmount } from "@/lib/reports"
+import { requireUser } from "@/lib/session"
+import { AppShell } from "@/components/shell/AppShell"
+import { PageHeader } from "@/components/shell/PageHeader"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table"
+import { KpiGrid } from "@/components/reports/KpiGrid"
+import { SalesChart } from "@/components/reports/SalesChart"
+import { TopMenusCard } from "@/components/reports/TopMenusCard"
 
 export default async function OwnerPage() {
-  const session = await auth()
-  const userId = session?.user?.id
-  const role = session?.user?.role
-
-  if (!userId || role !== "OWNER") {
-    redirect("/login")
-  }
+  const user = await requireUser(["OWNER"])
 
   const transactions = await prisma.transaction.findMany({
     orderBy: { createdAt: "desc" },
@@ -20,99 +26,92 @@ export default async function OwnerPage() {
     },
   })
 
-  const totalRevenue = transactions.reduce((sum, tx) => sum + Number(tx.total), 0)
-  const transactionCount = transactions.length
+  const totalRevenue = transactions.reduce((sum, tx) => sum + toAmount(tx.total), 0)
+  const daily = buildDailyTotals(transactions)
+  const quantities = buildItemQuantities(transactions)
+  const itemCount = Array.from(quantities.values()).reduce((sum, quantity) => sum + quantity, 0)
+  const average = transactions.length > 0 ? totalRevenue / transactions.length : 0
 
-  const menuIds = Array.from(
-    new Set(
-      transactions.flatMap((tx) => {
-        const items = tx.items as { items?: { menuId: string; quantity: number }[] } | null
-        return (items?.items ?? []).map((item) => item.menuId)
-      }),
-    ),
-  )
-
-  const topMenus = await prisma.menu.findMany({
-    where: { id: { in: menuIds } },
-    select: { id: true, name: true, price: true, stock: true },
-  })
-
-  const topRows = topMenus
-    .map((menu) => {
-      const quantity = transactions.reduce((sum, tx) => {
-        const items = tx.items as { items?: { menuId: string; quantity: number }[] } | null
-        const found = (items?.items ?? []).find((item) => item.menuId === menu.id)
-        return sum + (found?.quantity ?? 0)
-      }, 0)
-      return { menu, quantity }
-    })
-    .sort((a, b) => b.quantity - a.quantity)
+  const topEntries = Array.from(quantities.entries())
+    .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
 
+  const topMenus = await prisma.menu.findMany({
+    where: { id: { in: topEntries.map(([menuId]) => menuId) } },
+    select: { id: true, name: true },
+  })
+
+  const topRows = topEntries.map(([menuId, quantity]) => ({
+    menuId,
+    name: topMenus.find((menu) => menu.id === menuId)?.name ?? "Menu dihapus",
+    quantity,
+  }))
+
   return (
-    <main className="min-h-screen bg-slate-50 p-4">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="text-2xl font-bold">Owner — Laporan Penjualan</h1>
-        <p className="mt-1 text-sm text-slate-500">Ringkasan penjualan dan riwayat transaksi.</p>
+    <AppShell user={user}>
+      <PageHeader
+        eyebrow="Owner"
+        title="Laporan Penjualan"
+        description="Ringkasan omzet, transaksi, dan menu terlaris milik toko."
+        actions={
+          <Link
+            href="/admin/reports"
+            className="inline-flex h-9 items-center rounded-xl border border-line bg-surface-2 px-3 text-xs font-semibold text-muted transition-colors hover:text-ink"
+          >
+            Laporan lengkap
+          </Link>
+        }
+      />
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl border bg-white p-4">
-            <div className="text-sm text-slate-500">Total Penjualan</div>
-            <div className="mt-1 text-xl font-bold">Rp {totalRevenue.toFixed(2)}</div>
-          </div>
-          <div className="rounded-xl border bg-white p-4">
-            <div className="text-sm text-slate-500">Jumlah Transaksi</div>
-            <div className="mt-1 text-xl font-bold">{transactionCount}</div>
-          </div>
+      <div className="mt-6 space-y-4">
+        <KpiGrid
+          totalRevenue={totalRevenue}
+          transactionCount={transactions.length}
+          itemCount={itemCount}
+          average={average}
+        />
+
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+          <SalesChart data={daily} />
+
+          <TopMenusCard rows={topRows} />
         </div>
 
-        <div className="mt-6 rounded-xl border bg-white">
-          <h2 className="p-4 font-semibold">Transaksi Terbaru</h2>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left">
-                <th className="p-3">Waktu</th>
-                <th className="p-3">Kasir</th>
-                <th className="p-3">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((tx) => (
-                <tr key={tx.id} className="border-t">
-                  <td className="p-3">{new Date(tx.createdAt).toLocaleString()}</td>
-                  <td className="p-3">{tx.user?.name ?? tx.user?.email ?? "-"}</td>
-                  <td className="p-3">Rp {Number(tx.total).toFixed(2)}</td>
-                </tr>
-              ))}
-              {transactions.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="p-3 text-center text-slate-500">
-                    Belum ada transaksi.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-
-        {topRows.length > 0 ? (
-          <div className="mt-6 rounded-xl border bg-white p-4">
-            <h2 className="font-semibold">Top Menu Terlaris</h2>
-            <ul className="mt-3 space-y-2">
-              {topRows.map(({ menu, quantity }) => (
-                <li key={menu.id} className="flex justify-between text-sm">
-                  <span>
-                    {menu.name} × {quantity}
-                  </span>
-                  <span>Rp {(Number(menu.price) * quantity).toFixed(2)}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <CardTitle>Transaksi Terbaru</CardTitle>
+            <Badge tone="neutral">{transactions.length} transaksi</Badge>
+          </CardHeader>
+          {transactions.length === 0 ? (
+            <EmptyState
+              icon={ReceiptText}
+              title="Belum ada transaksi"
+              description="Transaksi dari terminal kasir akan muncul di sini."
+            />
+          ) : (
+            <Table>
+              <THead>
+                <TR>
+                  <TH>Waktu</TH>
+                  <TH>Kasir</TH>
+                  <TH className="text-right">Total</TH>
+                </TR>
+              </THead>
+              <TBody>
+                {transactions.slice(0, 10).map((tx) => (
+                  <TR key={tx.id}>
+                    <TD className="whitespace-nowrap text-xs text-muted">{formatDateTime(tx.createdAt)}</TD>
+                    <TD className="font-semibold text-ink">{tx.user?.name ?? tx.user?.email ?? "-"}</TD>
+                    <TD className="text-right font-bold tabular-nums">{formatRupiah(Number(tx.total))}</TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+          )}
+        </Card>
       </div>
-    </main>
+    </AppShell>
   )
 }
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic"
