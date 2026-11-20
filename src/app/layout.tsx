@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Plus_Jakarta_Sans } from "next/font/google"
+import { Providers } from "@/components/providers"
 import "./globals.css"
 
 const jakarta = Plus_Jakarta_Sans({
@@ -9,7 +10,10 @@ const jakarta = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: "Point of Sale — Kasir, Admin & Owner",
+  title: {
+    default: "Point of Sale — Kasir, Admin & Owner",
+    template: "%s · Point of Sale",
+  },
   description: "Sistem point of sale untuk mengelola pesanan, menu, stok, dan laporan penjualan.",
 }
 
@@ -20,7 +24,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className={`${jakarta.variable} antialiased`}>{children}</body>
+      <body className={`${jakarta.variable} antialiased`}>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   )
 }

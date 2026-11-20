@@ -14,6 +14,8 @@ import { KpiGrid } from "@/components/reports/KpiGrid"
 import { SalesChart } from "@/components/reports/SalesChart"
 import { TopMenusCard } from "@/components/reports/TopMenusCard"
 
+export const metadata = { title: "Owner" }
+
 export default async function OwnerPage() {
   const user = await requireUser(["OWNER"])
 

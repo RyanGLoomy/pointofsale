@@ -1,15 +1,14 @@
 import { ReceiptText, Users, Wallet } from "lucide-react"
 import { prisma } from "@/lib/prisma"
-import { formatDateTime, formatRupiah } from "@/lib/format"
+import { formatRupiah } from "@/lib/format"
 import { requireUser } from "@/lib/session"
 import { AppShell } from "@/components/shell/AppShell"
 import { PageHeader } from "@/components/shell/PageHeader"
 import { Badge } from "@/components/ui/badge"
-import { PaymentMethodBadge } from "@/components/payment-method-badge"
-import { Card } from "@/components/ui/card"
-import { EmptyState } from "@/components/ui/empty-state"
 import { StatCard } from "@/components/ui/stat-card"
-import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table"
+import { TransactionHistory, type TransactionRow } from "@/components/TransactionHistory"
+
+export const metadata = { title: "Riwayat Transaksi" }
 
 export default async function AdminTransactionsPage() {
   const user = await requireUser(["ADMIN", "OWNER"])
@@ -21,6 +20,42 @@ export default async function AdminTransactionsPage() {
         select: { id: true, email: true, name: true, role: true },
       },
     },
+  })
+
+  const orderIds = transactions
+    .map((tx) => tx.orderId)
+    .filter((orderId): orderId is string => Boolean(orderId))
+
+  const orders = await prisma.order.findMany({
+    where: { id: { in: orderIds } },
+    include: {
+      items: {
+        include: {
+          menu: { select: { name: true } },
+        },
+      },
+    },
+  })
+  const orderMap = new Map(orders.map((order) => [order.id, order]))
+
+  const rows: TransactionRow[] = transactions.map((tx) => {
+    const order = tx.orderId ? orderMap.get(tx.orderId) : undefined
+    const lines = (order?.items ?? []).map((item) => ({
+      name: item.menu.name,
+      quantity: item.quantity,
+      price: Number(item.price),
+    }))
+
+    return {
+      id: tx.id,
+      orderId: tx.orderId,
+      createdAt: tx.createdAt.toISOString(),
+      total: Number(tx.total),
+      paymentMethod: tx.paymentMethod,
+      cashierName: tx.user?.name ?? tx.user?.email ?? "-",
+      cashierRole: tx.user?.role ?? "-",
+      lines,
+    }
   })
 
   const totalRevenue = transactions.reduce((sum, tx) => sum + Number(tx.total), 0)
@@ -41,45 +76,7 @@ export default async function AdminTransactionsPage() {
         <StatCard label="Kasir Terlibat" value={cashierCount} icon={Users} />
       </div>
 
-      <Card className="mt-4 overflow-hidden">
-        {transactions.length === 0 ? (
-          <EmptyState
-            icon={ReceiptText}
-            title="Belum ada transaksi"
-            description="Transaksi dari terminal kasir akan muncul di sini."
-          />
-        ) : (
-          <Table>
-            <THead>
-              <TR>
-                <TH>Waktu</TH>
-                <TH>Kasir</TH>
-                <TH>Order</TH>
-                <TH>Metode</TH>
-                <TH className="text-right">Total</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {transactions.map((tx) => (
-                <TR key={tx.id}>
-                  <TD className="whitespace-nowrap text-xs text-muted">{formatDateTime(tx.createdAt)}</TD>
-                  <TD>
-                    <div className="font-semibold text-ink">{tx.user?.name ?? tx.user?.email ?? "-"}</div>
-                    <div className="text-[11px] capitalize text-muted">{tx.user?.role.toLowerCase() ?? "-"}</div>
-                  </TD>
-                  <TD className="font-mono text-[11px] text-muted">
-                    {tx.orderId ? tx.orderId.slice(0, 8).toUpperCase() : "-"}
-                  </TD>
-                  <TD>
-                    <PaymentMethodBadge method={tx.paymentMethod} />
-                  </TD>
-                  <TD className="text-right font-bold tabular-nums">{formatRupiah(Number(tx.total))}</TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
-        )}
-      </Card>
+      <TransactionHistory rows={rows} />
     </AppShell>
   )
 }

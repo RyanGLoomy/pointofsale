@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getSession, signIn } from "next-auth/react"
 import { ArrowRight, BarChart3, LockKeyhole, ShieldCheck, ShoppingCart, Store } from "lucide-react"
 import type { FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
 
 const highlights = [
   {
@@ -26,23 +27,61 @@ const highlights = [
   },
 ]
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+interface FieldErrors {
+  email?: string
+  password?: string
+}
+
 export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  const emailRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+
+  function validate(): FieldErrors {
+    const next: FieldErrors = {}
+
+    if (!email.trim()) {
+      next.email = "Email wajib diisi."
+    } else if (!emailPattern.test(email.trim())) {
+      next.email = "Format email tidak valid."
+    }
+
+    if (!password) {
+      next.password = "Password wajib diisi."
+    }
+
+    return next
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setPending(true)
     setError(null)
 
-    const result = await signIn("credentials", { email, password, redirect: false })
+    const validation = validate()
+    if (validation.email || validation.password) {
+      setFieldErrors(validation)
+      if (validation.email) emailRef.current?.focus()
+      else passwordRef.current?.focus()
+      return
+    }
+
+    setFieldErrors({})
+    setPending(true)
+
+    const result = await signIn("credentials", { email: email.trim(), password, redirect: false })
 
     if (result?.error) {
       setPending(false)
       setError("Email atau password salah.")
+      passwordRef.current?.focus()
+      passwordRef.current?.select()
       return
     }
 
@@ -113,38 +152,62 @@ export function LoginForm() {
             </p>
           </div>
 
-          <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            <Field label="Email" htmlFor="email">
+          <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
+            <Field label="Email" htmlFor="email" error={fieldErrors.email}>
               <Input
+                ref={emailRef}
                 id="email"
                 type="email"
                 required
                 autoComplete="username"
+                autoFocus
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                disabled={pending}
+                aria-invalid={Boolean(fieldErrors.email)}
+                aria-describedby={fieldErrors.email ? "email-error" : undefined}
+                onChange={(event) => {
+                  setEmail(event.target.value)
+                  setFieldErrors((current) => ({ ...current, email: undefined }))
+                  setError(null)
+                }}
+                onBlur={() => {
+                  if (email.length > 0 && !emailPattern.test(email.trim())) {
+                    setFieldErrors((current) => ({ ...current, email: "Format email tidak valid." }))
+                  }
+                }}
                 placeholder="kasir@pointofsale.id"
               />
             </Field>
 
-            <Field label="Password" htmlFor="password">
-              <Input
+            <Field label="Password" htmlFor="password" error={fieldErrors.password}>
+              <PasswordInput
+                ref={passwordRef}
                 id="password"
-                type="password"
                 required
                 autoComplete="current-password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                disabled={pending}
+                aria-invalid={Boolean(fieldErrors.password)}
+                aria-describedby={fieldErrors.password ? "password-error" : undefined}
+                onChange={(event) => {
+                  setPassword(event.target.value)
+                  setFieldErrors((current) => ({ ...current, password: undefined }))
+                  setError(null)
+                }}
                 placeholder="••••••••"
               />
             </Field>
 
             {error ? (
-              <p className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+              <p
+                role="alert"
+                className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger"
+              >
                 {error}
               </p>
             ) : null}
 
-            <Button type="submit" size="lg" className="w-full" disabled={pending}>
+            <Button type="submit" size="lg" className="w-full" loading={pending}>
               {pending ? "Memproses..." : "Masuk"}
               {!pending ? <ArrowRight className="h-4 w-4" /> : null}
             </Button>

@@ -61,6 +61,10 @@ describe("formatAmountInput", () => {
   it("treats separators as grouping", () => {
     expect(formatAmountInput("Rp 15.000")).toBe("15.000")
   })
+
+  it("returns an empty string when the input has no digits", () => {
+    expect(formatAmountInput("abc")).toBe("")
+  })
 })
 
 describe("roundUpTo", () => {

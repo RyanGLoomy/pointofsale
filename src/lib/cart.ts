@@ -104,8 +104,7 @@ export function sanitizeCart(raw: unknown, items: CartItem[]): CartLine[] {
 
   const lines: CartLine[] = []
   for (const [menuId, quantity] of quantities) {
-    const menu = menuById.get(menuId)
-    if (!menu) continue
+    const menu = menuById.get(menuId)!
     lines.push({
       menuId,
       name: menu.name,

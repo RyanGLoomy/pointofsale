@@ -5,12 +5,15 @@ import { Save, X } from "lucide-react"
 import { createMenu, setMenuActive, updateMenu } from "@/actions/menu"
 import type { FormEvent } from "react"
 import { formatRupiah } from "@/lib/format"
+import { digitsOnly, formatAmountInput, parseAmountInput } from "@/lib/money"
 import { Badge, type BadgeTone } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Field, Input } from "@/components/ui/input"
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table"
+import { useConfirm } from "@/components/ui/confirm"
+import { useToast } from "@/components/ui/toast"
 
 export interface MenuRow {
   id: string
@@ -26,6 +29,11 @@ interface MenuManagerProps {
   menus: MenuRow[]
 }
 
+interface FieldErrors {
+  name?: string
+  price?: string
+}
+
 function stockTone(stock: number): BadgeTone {
   if (stock <= 0) return "danger"
   if (stock <= 5) return "warning"
@@ -33,24 +41,29 @@ function stockTone(stock: number): BadgeTone {
 }
 
 export function MenuManager({ menus }: MenuManagerProps) {
+  const confirm = useConfirm()
+  const toast = useToast()
+
   const [editing, setEditing] = useState<MenuRow | null>(null)
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [price, setPrice] = useState("0")
   const [stock, setStock] = useState("0")
   const [category, setCategory] = useState("")
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
 
   function startEdit(menu: MenuRow) {
     setEditing(menu)
     setName(menu.name)
     setDescription(menu.description ?? "")
-    setPrice(String(menu.price))
+    setPrice(String(Math.round(menu.price)))
     setStock(String(menu.stock))
     setCategory(menu.category ?? "")
+    setFieldErrors({})
     setError(null)
-    setNotice(null)
   }
 
   function resetForm() {
@@ -60,25 +73,34 @@ export function MenuManager({ menus }: MenuManagerProps) {
     setPrice("0")
     setStock("0")
     setCategory("")
+    setFieldErrors({})
     setError(null)
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
-    setNotice(null)
 
-    const parsedPrice = Number(price)
+    const parsedPrice = parseAmountInput(price)
     const parsedStock = Math.max(0, Math.floor(Number(stock) || 0))
+    const nextErrors: FieldErrors = {}
 
     if (!name.trim()) {
-      setError("Nama menu wajib diisi.")
+      nextErrors.name = "Nama menu wajib diisi."
+    }
+
+    if (price.trim() === "" || parsedPrice <= 0) {
+      nextErrors.price = "Harga harus lebih dari 0."
+    }
+
+    if (nextErrors.name || nextErrors.price) {
+      setFieldErrors(nextErrors)
+      document.getElementById(nextErrors.name ? "menu-name" : "menu-price")?.focus()
       return
     }
-    if (!Number.isFinite(parsedPrice) || parsedPrice < 0) {
-      setError("Harga tidak valid.")
-      return
-    }
+
+    setFieldErrors({})
+    setSaving(true)
 
     try {
       if (editing) {
@@ -90,7 +112,7 @@ export function MenuManager({ menus }: MenuManagerProps) {
           category: category.trim() || undefined,
           active: editing.active,
         })
-        setNotice("Menu diperbarui.")
+        toast.success("Menu diperbarui", name.trim())
       } else {
         await createMenu({
           name: name.trim(),
@@ -99,20 +121,46 @@ export function MenuManager({ menus }: MenuManagerProps) {
           stock: parsedStock,
           category: category.trim() || undefined,
         })
-        setNotice("Menu ditambahkan.")
+        toast.success("Menu ditambahkan", name.trim())
       }
       resetForm()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal menyimpan menu.")
+      const message = err instanceof Error ? err.message : "Gagal menyimpan menu."
+      setError(message)
+      toast.error("Gagal menyimpan menu", message)
+    } finally {
+      setSaving(false)
     }
   }
 
   async function toggleActive(menu: MenuRow) {
+    if (menu.active) {
+      const confirmed = await confirm({
+        title: `Nonaktifkan "${menu.name}"?`,
+        description:
+          "Menu ini tidak akan muncul di terminal kasir sampai diaktifkan kembali.",
+        confirmLabel: "Nonaktifkan",
+        tone: "danger",
+      })
+
+      if (!confirmed) return
+    }
+
+    setTogglingId(menu.id)
+    setError(null)
+
     try {
       await setMenuActive(menu.id, !menu.active)
-      setNotice(`Menu "${menu.name}" ${menu.active ? "dinonaktifkan" : "diaktifkan"}.`)
+      toast.success(
+        menu.active ? "Menu dinonaktifkan" : "Menu diaktifkan",
+        menu.name,
+      )
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal mengubah status menu.")
+      const message = err instanceof Error ? err.message : "Gagal mengubah status menu."
+      setError(message)
+      toast.error("Gagal mengubah status menu", message)
+    } finally {
+      setTogglingId(null)
     }
   }
 
@@ -131,26 +179,41 @@ export function MenuManager({ menus }: MenuManagerProps) {
           {editing ? <Badge tone="ember">Mode edit</Badge> : null}
         </CardHeader>
 
-        <form onSubmit={onSubmit} className="space-y-3 p-4">
-          <Field label="Nama" htmlFor="menu-name">
+        <form onSubmit={onSubmit} className="space-y-3 p-4" noValidate>
+          <Field label="Nama" htmlFor="menu-name" error={fieldErrors.name}>
             <Input
               id="menu-name"
               value={name}
-              onChange={(event) => setName(event.target.value)}
+              onChange={(event) => {
+                setName(event.target.value)
+                setFieldErrors((current) => ({ ...current, name: undefined }))
+              }}
+              aria-invalid={Boolean(fieldErrors.name)}
+              aria-describedby={fieldErrors.name ? "menu-name-error" : undefined}
               placeholder="Contoh: Kopi Suroko"
             />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Harga" htmlFor="menu-price">
-              <Input
-                id="menu-price"
-                value={price}
-                onChange={(event) => setPrice(event.target.value)}
-                type="number"
-                step="1"
-                min="0"
-              />
+            <Field label="Harga" htmlFor="menu-price" error={fieldErrors.price}>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted">
+                  Rp
+                </span>
+                <Input
+                  id="menu-price"
+                  inputMode="numeric"
+                  value={formatAmountInput(price)}
+                  onChange={(event) => {
+                    setPrice(digitsOnly(event.target.value))
+                    setFieldErrors((current) => ({ ...current, price: undefined }))
+                  }}
+                  aria-invalid={Boolean(fieldErrors.price)}
+                  aria-describedby={fieldErrors.price ? "menu-price-error" : undefined}
+                  placeholder="0"
+                  className="pl-9 text-right font-semibold tabular-nums"
+                />
+              </div>
             </Field>
             <Field label="Stok" htmlFor="menu-stock">
               <Input
@@ -182,24 +245,22 @@ export function MenuManager({ menus }: MenuManagerProps) {
           </Field>
 
           {error ? (
-            <p className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+            <p
+              role="alert"
+              className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger"
+            >
               {error}
-            </p>
-          ) : null}
-          {notice ? (
-            <p className="rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-xs text-success">
-              {notice}
             </p>
           ) : null}
 
           <div className="flex gap-2 pt-1">
-            <Button type="submit" className="flex-1">
-              <Save className="h-4 w-4" />
-              {editing ? "Simpan Perubahan" : "Tambah Menu"}
+            <Button type="submit" className="flex-1" loading={saving}>
+              {!saving ? <Save className="h-4 w-4" aria-hidden="true" /> : null}
+              {saving ? "Menyimpan..." : editing ? "Simpan Perubahan" : "Tambah Menu"}
             </Button>
             {editing ? (
-              <Button variant="secondary" onClick={resetForm}>
-                <X className="h-4 w-4" />
+              <Button variant="secondary" onClick={resetForm} disabled={saving}>
+                <X className="h-4 w-4" aria-hidden="true" />
                 Batal
               </Button>
             ) : null}
@@ -257,10 +318,20 @@ export function MenuManager({ menus }: MenuManagerProps) {
                   </TD>
                   <TD>
                     <div className="flex justify-end gap-2">
-                      <Button variant="secondary" size="sm" onClick={() => startEdit(menu)}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => startEdit(menu)}
+                        disabled={togglingId === menu.id}
+                      >
                         Edit
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => toggleActive(menu)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleActive(menu)}
+                        loading={togglingId === menu.id}
+                      >
                         {menu.active ? "Nonaktifkan" : "Aktifkan"}
                       </Button>
                     </div>

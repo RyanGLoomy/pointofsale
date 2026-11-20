@@ -28,6 +28,16 @@ describe("addLine", () => {
     expect(addLine([line()], coffee)[0].quantity).toBe(2)
   })
 
+  it("keeps other lines untouched when incrementing", () => {
+    const teaLine = line({ menuId: "tea", name: "Teh", price: 10000 })
+    const next = addLine([line(), teaLine], coffee)
+    expect(next[1]).toEqual(teaLine)
+  })
+
+  it("does not add an out-of-stock item", () => {
+    expect(addLine([], { ...coffee, stock: 0 })).toEqual([])
+  })
+
   it("does not exceed stock", () => {
     const cart = [line({ quantity: 3 })]
     expect(addLine(cart, coffee)).toBe(cart)
@@ -153,6 +163,10 @@ describe("sanitizeCart", () => {
     expect(sanitizeCart(null, [coffee])).toEqual([])
     expect(sanitizeCart("nope", [coffee])).toEqual([])
     expect(sanitizeCart([null, 42, { menuId: 7 }], [coffee])).toEqual([])
+    expect(sanitizeCart([{ menuId: "coffee", quantity: "2" }], [coffee])).toEqual([])
+    expect(sanitizeCart([{ menuId: "coffee", quantity: Number.POSITIVE_INFINITY }], [coffee])).toEqual(
+      [],
+    )
   })
 
   it("rejects non-positive quantities", () => {

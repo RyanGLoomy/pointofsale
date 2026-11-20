@@ -13,6 +13,8 @@ import { KpiGrid } from "@/components/reports/KpiGrid"
 import { SalesChart } from "@/components/reports/SalesChart"
 import { TopMenusCard } from "@/components/reports/TopMenusCard"
 
+export const metadata = { title: "Laporan Penjualan" }
+
 export default async function AdminReportsPage() {
   const user = await requireUser(["ADMIN", "OWNER"])
 

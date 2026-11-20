@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { prisma } from "@/lib/prisma"
 import { requireUser } from "@/lib/session"
 
+export const metadata = { title: "Kelola Menu" }
+
 export default async function AdminMenusPage() {
   const user = await requireUser(["ADMIN", "OWNER"])
 

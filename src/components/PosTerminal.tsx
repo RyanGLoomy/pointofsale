@@ -1,11 +1,12 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   ArrowRight,
   CircleCheck,
   Coffee,
+  Copy,
   Package,
   Printer,
   Search,
@@ -15,15 +16,45 @@ import {
   X,
 } from "lucide-react"
 import { checkoutPOS } from "@/actions/orders"
-import { cn, formatDateTime, formatRupiah } from "@/lib/format"
+import { cn, formatRupiah } from "@/lib/format"
 import { productGradient, productInitial } from "@/lib/product-visual"
+import {
+  addLine,
+  CART_STORAGE_KEY,
+  cartCount,
+  cartTotal,
+  decreaseLine,
+  increaseLine,
+  insertLine,
+  removeLine,
+  sanitizeCart,
+  type CartLine,
+} from "@/lib/cart"
+import {
+  calculateChange,
+  digitsOnly,
+  formatAmountInput,
+  isCashEnough,
+  parseAmountInput,
+  quickCashOptions,
+} from "@/lib/money"
+import {
+  buildReceiptNumber,
+  PAYMENT_LABELS,
+  type PaymentMethod,
+  type ReceiptData,
+} from "@/lib/receipt"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
+import { Modal } from "@/components/ui/modal"
 import { QuantityStepper } from "@/components/ui/quantity-stepper"
 import { Segmented, type SegmentedOption } from "@/components/ui/segmented"
+import { useConfirm } from "@/components/ui/confirm"
+import { useToast } from "@/components/ui/toast"
+import { ReceiptView } from "@/components/receipt/ReceiptView"
 
 export interface PosItem {
   id: string
@@ -33,35 +64,11 @@ export interface PosItem {
   category?: string | null
 }
 
-interface CartLine {
-  menuId: string
-  name: string
-  price: number
-  quantity: number
-  stock: number
-}
-
-type PaymentMethod = "CASH" | "CARD" | "QRIS"
-
-interface Receipt {
-  orderId: string
-  total: number
-  method: PaymentMethod
-  createdAt: string
-  lines: CartLine[]
-}
-
 const paymentOptions: SegmentedOption<PaymentMethod>[] = [
   { value: "CASH", label: "Tunai" },
   { value: "CARD", label: "Kartu" },
   { value: "QRIS", label: "QRIS" },
 ]
-
-const paymentLabels: Record<PaymentMethod, string> = {
-  CASH: "Tunai",
-  CARD: "Kartu",
-  QRIS: "QRIS",
-}
 
 function CategoryIcon({ category }: { category?: string | null }) {
   const value = (category ?? "").toLowerCase()
@@ -74,6 +81,18 @@ function CategoryIcon({ category }: { category?: string | null }) {
   return <Package className="h-3.5 w-3.5" />
 }
 
+function readStoredCart(items: PosItem[]): CartLine[] {
+  if (typeof window === "undefined") return []
+
+  try {
+    const stored = window.localStorage.getItem(CART_STORAGE_KEY)
+    if (!stored) return []
+    return sanitizeCart(JSON.parse(stored), items)
+  } catch {
+    return []
+  }
+}
+
 export function PosTerminal({
   items,
   userId,
@@ -84,11 +103,18 @@ export function PosTerminal({
   cashierName: string
 }) {
   const router = useRouter()
+  const confirm = useConfirm()
+  const toast = useToast()
+  const searchRef = useRef<HTMLInputElement>(null)
+
   const [cart, setCart] = useState<CartLine[]>([])
+  const [hydrated, setHydrated] = useState(false)
+  const [restoreBanner, setRestoreBanner] = useState(false)
   const [query, setQuery] = useState("")
   const [category, setCategory] = useState("Semua")
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH")
-  const [receipt, setReceipt] = useState<Receipt | null>(null)
+  const [cashReceived, setCashReceived] = useState("")
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
 
@@ -110,56 +136,153 @@ export function PosTerminal({
     })
   }, [items, query, category])
 
-  const total = useMemo(
-    () => cart.reduce((sum, line) => sum + line.price * line.quantity, 0),
-    [cart],
-  )
-  const itemCount = useMemo(
-    () => cart.reduce((sum, line) => sum + line.quantity, 0),
-    [cart],
-  )
+  const total = useMemo(() => cartTotal(cart), [cart])
+  const itemCount = useMemo(() => cartCount(cart), [cart])
+  const cashAmount = parseAmountInput(cashReceived)
+  const change = calculateChange(cashAmount, total)
+  const cashEnough = isCashEnough(cashAmount, total)
+  const cashRequired = paymentMethod === "CASH" && cart.length > 0
+  const canCheckout = cart.length > 0 && !pending && (!cashRequired || cashEnough)
+
+  useEffect(() => {
+    const stored = readStoredCart(items)
+    if (stored.length > 0) {
+      setCart(stored)
+      setRestoreBanner(true)
+    }
+    setHydrated(true)
+  }, [items])
+
+  useEffect(() => {
+    if (!hydrated) return
+
+    try {
+      if (cart.length === 0) {
+        window.localStorage.removeItem(CART_STORAGE_KEY)
+      } else {
+        window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart))
+      }
+    } catch {
+      // Storage can be unavailable (private mode); the cart still works in memory.
+    }
+  }, [cart, hydrated])
+
+  useEffect(() => {
+    if (cart.length === 0) return
+
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault()
+      event.returnValue = ""
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+  }, [cart.length])
+
+  useEffect(() => {
+    function handleShortcut(event: KeyboardEvent) {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return
+
+      const target = event.target as HTMLElement | null
+      const tag = target?.tagName
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target?.isContentEditable) {
+        return
+      }
+
+      event.preventDefault()
+      searchRef.current?.focus()
+    }
+
+    window.addEventListener("keydown", handleShortcut)
+    return () => window.removeEventListener("keydown", handleShortcut)
+  }, [])
+
+  useEffect(() => {
+    if (cart.length === 0) setCashReceived("")
+  }, [cart.length])
 
   function addToCart(item: PosItem) {
-    setCart((previous) => {
-      const existing = previous.find((line) => line.menuId === item.id)
-      if (existing) {
-        if (existing.quantity + 1 > existing.stock) return previous
-        return previous.map((line) =>
-          line.menuId === item.id ? { ...line, quantity: line.quantity + 1 } : line,
-        )
-      }
-      return [
-        ...previous,
-        { menuId: item.id, name: item.name, price: item.price, quantity: 1, stock: item.stock },
-      ]
+    const existing = cart.find((line) => line.menuId === item.id)
+
+    if (existing && existing.quantity >= existing.stock) {
+      toast.info("Stok maksimum", `${item.name} hanya tersisa ${existing.stock}.`)
+      return
+    }
+
+    setCart((previous) => addLine(previous, item))
+  }
+
+  function handleDecrease(line: CartLine) {
+    if (line.quantity > 1) {
+      setCart((previous) => decreaseLine(previous, line.menuId))
+      return
+    }
+
+    const index = cart.findIndex((entry) => entry.menuId === line.menuId)
+    const removed = cart[index]
+    setCart((previous) => removeLine(previous, line.menuId))
+
+    if (removed) {
+      toast.info("Item dihapus", removed.name, {
+        label: "Urungkan",
+        onClick: () => setCart((previous) => insertLine(previous, removed, index)),
+      })
+    }
+  }
+
+  async function handleClear() {
+    if (cart.length === 0) return
+
+    const confirmed = await confirm({
+      title: "Kosongkan keranjang?",
+      description: `${itemCount} item akan dihapus dari pesanan ini.`,
+      confirmLabel: "Kosongkan",
+      tone: "danger",
+    })
+
+    if (!confirmed) return
+
+    const snapshot = sanitizeCart(cart, items)
+    setCart([])
+    setError(null)
+
+    toast.info("Keranjang dikosongkan", undefined, {
+      label: "Urungkan",
+      onClick: () => setCart(snapshot),
     })
   }
 
-  function decreaseLine(menuId: string) {
-    setCart((previous) =>
-      previous.flatMap((line) => {
-        if (line.menuId !== menuId) return [line]
-        return line.quantity > 1 ? [{ ...line, quantity: line.quantity - 1 }] : []
-      }),
-    )
+  function handleDismissRestore() {
+    setCart([])
+    setRestoreBanner(false)
+    setError(null)
   }
 
-  function increaseLine(menuId: string) {
-    setCart((previous) =>
-      previous.map((line) =>
-        line.menuId === menuId && line.quantity < line.stock
-          ? { ...line, quantity: line.quantity + 1 }
-          : line,
-      ),
-    )
+  async function copyReceiptNumber() {
+    if (!receipt) return
+
+    const value = buildReceiptNumber(receipt.orderId, receipt.createdAt)
+
+    try {
+      await navigator.clipboard.writeText(value)
+      toast.success("Nomor struk disalin", value)
+    } catch {
+      toast.error("Gagal menyalin", "Salin nomor struk secara manual.")
+    }
   }
 
   async function handleCheckout() {
-    if (cart.length === 0) return
+    if (cart.length === 0 || pending) return
+
+    if (cashRequired && !cashEnough) {
+      setError("Uang diterima belum mencukupi total.")
+      return
+    }
 
     setPending(true)
     setError(null)
     const snapshot = cart
+    const received = paymentMethod === "CASH" ? cashAmount : undefined
 
     try {
       const result = await checkoutPOS({
@@ -174,11 +297,17 @@ export function PosTerminal({
         method: paymentMethod,
         createdAt: new Date().toISOString(),
         lines: snapshot,
+        cashierName,
+        cashReceived: received,
       })
       setCart([])
+      setRestoreBanner(false)
       router.refresh()
+      toast.success("Pembayaran berhasil", `${formatRupiah(result.total)} · ${PAYMENT_LABELS[paymentMethod]}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal memproses transaksi.")
+      const message = err instanceof Error ? err.message : "Gagal memproses transaksi."
+      setError(message)
+      toast.error("Transaksi gagal", message)
     } finally {
       setPending(false)
     }
@@ -186,18 +315,68 @@ export function PosTerminal({
 
   return (
     <>
-      <div className="mt-6 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px]">
+      {restoreBanner ? (
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-info/30 bg-info/10 px-3 py-2">
+          <p className="text-xs font-medium text-info">Keranjang sebelumnya dipulihkan.</p>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleDismissRestore}
+              className="rounded-md px-2 py-1 text-[11px] font-bold text-info underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info/60"
+            >
+              Kosongkan
+            </button>
+            <button
+              type="button"
+              aria-label="Tutup pemberitahuan"
+              onClick={() => setRestoreBanner(false)}
+              className="flex h-6 w-6 items-center justify-center rounded-md text-info/80 transition-colors hover:bg-info/10 hover:text-info focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info/60"
+            >
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px]">
         <Card className="overflow-hidden">
           <div className="space-y-3 border-b border-line p-4">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
               <Input
+                ref={searchRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape" && query.length > 0) {
+                    event.preventDefault()
+                    setQuery("")
+                  }
+                }}
                 placeholder="Cari menu atau kategori..."
                 aria-label="Cari menu"
-                className="pl-9"
+                className="pl-9 pr-10"
               />
+              {query ? (
+                <button
+                  type="button"
+                  aria-label="Hapus pencarian"
+                  onClick={() => {
+                    setQuery("")
+                    searchRef.current?.focus()
+                  }}
+                  className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition-colors hover:bg-white/5 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember/60"
+                >
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              ) : (
+                <kbd
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-line bg-surface px-1.5 py-0.5 text-[10px] font-semibold text-muted sm:block"
+                >
+                  /
+                </kbd>
+              )}
             </div>
 
             <div className="flex gap-1.5 overflow-x-auto pb-0.5">
@@ -283,16 +462,8 @@ export function PosTerminal({
               <div className="flex items-center gap-2">
                 <Badge tone={itemCount > 0 ? "ember" : "neutral"}>{itemCount}</Badge>
                 {cart.length > 0 ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-label="Kosongkan keranjang"
-                    onClick={() => {
-                      setCart([])
-                      setError(null)
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
+                  <Button variant="ghost" size="sm" aria-label="Kosongkan keranjang" onClick={handleClear}>
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 ) : null}
               </div>
@@ -333,8 +504,8 @@ export function PosTerminal({
                           <QuantityStepper
                             quantity={line.quantity}
                             max={line.stock}
-                            onDecrease={() => decreaseLine(line.menuId)}
-                            onIncrease={() => increaseLine(line.menuId)}
+                            onDecrease={() => handleDecrease(line)}
+                            onIncrease={() => setCart((previous) => increaseLine(previous, line.menuId))}
                           />
                           <span className="text-[10px] text-muted">
                             {formatRupiah(line.price)} / item
@@ -365,110 +536,128 @@ export function PosTerminal({
                 className="mt-3"
               />
 
+              {paymentMethod === "CASH" && cart.length > 0 ? (
+                <div className="mt-3 rounded-xl border border-line bg-surface-2/60 p-3">
+                  <label
+                    htmlFor="cash-received"
+                    className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-muted"
+                  >
+                    Uang diterima
+                  </label>
+                  <div className="relative mt-1.5">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted">
+                      Rp
+                    </span>
+                    <Input
+                      id="cash-received"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      value={formatAmountInput(cashReceived)}
+                      onChange={(event) => {
+                        setCashReceived(digitsOnly(event.target.value))
+                        setError(null)
+                      }}
+                      placeholder="0"
+                      className="pl-9 text-right font-semibold tabular-nums"
+                    />
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {quickCashOptions(total).map((amount, index) => (
+                      <button
+                        key={amount}
+                        type="button"
+                        onClick={() => {
+                          setCashReceived(String(amount))
+                          setError(null)
+                        }}
+                        className="rounded-lg border border-line bg-surface px-2.5 py-1 text-[11px] font-semibold text-muted transition-colors hover:border-ember/40 hover:text-ember focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember/60"
+                      >
+                        {index === 0 ? "Uang pas" : formatRupiah(amount)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-2.5 flex items-center justify-between text-xs">
+                    <span className="text-muted">Kembalian</span>
+                    <span
+                      className={cn(
+                        "font-bold tabular-nums",
+                        change < 0 ? "text-danger" : "text-success",
+                      )}
+                    >
+                      {change < 0 ? `Kurang ${formatRupiah(Math.abs(change))}` : formatRupiah(change)}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+
               <Button
                 size="lg"
                 className="mt-3 w-full"
                 onClick={handleCheckout}
-                disabled={pending || cart.length === 0}
+                disabled={!canCheckout}
+                loading={pending}
               >
                 {pending ? "Memproses..." : "Bayar Sekarang"}
-                {!pending ? <ArrowRight className="h-4 w-4" /> : null}
+                {!pending ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : null}
               </Button>
 
-              {error ? <p className="mt-2 text-xs text-danger">{error}</p> : null}
+              {error ? (
+                <p role="alert" className="mt-2 text-xs text-danger">
+                  {error}
+                </p>
+              ) : null}
             </div>
           </Card>
         </aside>
       </div>
 
-      {receipt ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
-          onClick={() => setReceipt(null)}
-          role="presentation"
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Struk Transaksi"
-            className="w-full max-w-md overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_40px_100px_-30px_rgba(0,0,0,0.9)]"
-            onClick={(event) => event.stopPropagation()}
-          >
+      <Modal
+        open={receipt !== null}
+        onClose={() => setReceipt(null)}
+        titleId="receipt-title"
+        className="max-w-md"
+      >
+        {receipt ? (
+          <>
             <div className="flex items-center justify-between border-b border-line px-4 py-3">
               <div className="flex items-center gap-2 text-success">
-                <CircleCheck className="h-5 w-5" />
-                <span className="text-sm font-bold">Pembayaran Berhasil</span>
+                <CircleCheck className="h-5 w-5" aria-hidden="true" />
+                <h2 id="receipt-title" className="text-sm font-bold text-ink">
+                  Pembayaran Berhasil
+                </h2>
               </div>
-              <Button variant="ghost" size="sm" aria-label="Tutup struk" onClick={() => setReceipt(null)}>
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Salin nomor struk"
+                  title="Salin nomor struk"
+                  onClick={copyReceiptNumber}
+                >
+                  <Copy className="h-4 w-4" aria-hidden="true" />
+                </Button>
+                <Button variant="ghost" size="sm" aria-label="Tutup struk" onClick={() => setReceipt(null)}>
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              </div>
             </div>
 
             <div className="max-h-[68vh] overflow-y-auto p-4">
-              <div className="receipt mx-auto w-full max-w-[320px] rounded-xl bg-white p-5 text-slate-900">
-                <div className="text-center">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                    Point of Sale
-                  </p>
-                  <p className="mt-1 text-base font-extrabold">Struk Pembayaran</p>
-                </div>
-
-                <dl className="mt-4 space-y-1 text-[11px] text-slate-600">
-                  <div className="flex justify-between gap-2">
-                    <dt>Order</dt>
-                    <dd className="font-mono">{receipt.orderId.slice(0, 8).toUpperCase()}</dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt>Waktu</dt>
-                    <dd>{formatDateTime(receipt.createdAt)}</dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt>Kasir</dt>
-                    <dd>{cashierName}</dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt>Metode</dt>
-                    <dd>{paymentLabels[receipt.method]}</dd>
-                  </div>
-                </dl>
-
-                <div className="my-3 border-t border-dashed border-slate-300" />
-
-                <ul className="space-y-2 text-[11px]">
-                  {receipt.lines.map((line) => (
-                    <li key={line.menuId} className="flex justify-between gap-2">
-                      <span>
-                        {line.name} × {line.quantity}
-                      </span>
-                      <span className="tabular-nums">{formatRupiah(line.price * line.quantity)}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="my-3 border-t border-dashed border-slate-300" />
-
-                <div className="flex justify-between text-sm font-extrabold">
-                  <span>Total</span>
-                  <span className="tabular-nums">{formatRupiah(receipt.total)}</span>
-                </div>
-                <p className="mt-4 text-center text-[10px] text-slate-500">
-                  Terima kasih telah berbelanja.
-                </p>
-              </div>
+              <ReceiptView data={receipt} />
             </div>
 
             <div className="flex gap-2 border-t border-line p-4">
               <Button variant="secondary" className="flex-1" onClick={() => window.print()}>
-                <Printer className="h-4 w-4" />
+                <Printer className="h-4 w-4" aria-hidden="true" />
                 Cetak Struk
               </Button>
               <Button className="flex-1" onClick={() => setReceipt(null)}>
                 Transaksi Baru
               </Button>
             </div>
-          </div>
-        </div>
-      ) : null}
+          </>
+        ) : null}
+      </Modal>
     </>
   )
 }

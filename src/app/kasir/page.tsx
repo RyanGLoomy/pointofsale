@@ -5,6 +5,8 @@ import { PageHeader } from "@/components/shell/PageHeader"
 import { Badge } from "@/components/ui/badge"
 import { requireUser } from "@/lib/session"
 
+export const metadata = { title: "Kasir" }
+
 export default async function KasirPage() {
   const user = await requireUser(["KASIR", "ADMIN", "OWNER"])
 

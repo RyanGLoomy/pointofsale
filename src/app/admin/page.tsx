@@ -22,6 +22,8 @@ import { StatCard } from "@/components/ui/stat-card"
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table"
 import { PaymentMethodBadge } from "@/components/payment-method-badge"
 
+export const metadata = { title: "Ringkasan" }
+
 const quickLinks = [
   {
     href: "/admin/menus",
