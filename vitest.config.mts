@@ -7,7 +7,15 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     coverage: {
       provider: "v8",
-      include: ["src/lib/format.ts", "src/lib/product-visual.ts", "src/lib/reports.ts", "src/lib/role-home.ts"],
+      include: [
+        "src/lib/cart.ts",
+        "src/lib/format.ts",
+        "src/lib/money.ts",
+        "src/lib/product-visual.ts",
+        "src/lib/receipt.ts",
+        "src/lib/reports.ts",
+        "src/lib/role-home.ts",
+      ],
       thresholds: {
         branches: 80,
         functions: 80,
