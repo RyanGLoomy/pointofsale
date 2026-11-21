@@ -389,7 +389,7 @@ export function PosTerminal({
                   className={cn(
                     "shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
                     category === entry
-                      ? "border-ember/40 bg-ember/10 text-ember"
+                      ? "border-ember/40 bg-ember text-[#f4f1e9]"
                       : "border-line bg-surface-2 text-muted hover:text-ink",
                   )}
                 >
@@ -414,21 +414,21 @@ export function PosTerminal({
                   onClick={() => addToCart(item)}
                   disabled={item.stock <= 0}
                   aria-label={`Tambah ${item.name} ke keranjang`}
-                  className="group flex flex-col rounded-2xl border border-line bg-surface-2/40 p-2.5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-ember/50 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+                  className="group flex flex-col rounded-2xl border border-line bg-surface p-2.5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-ember/50 hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
                 >
                   <div
                     className="relative aspect-[4/3] w-full overflow-hidden rounded-xl"
                     style={{ backgroundImage: productGradient(item.name) }}
                   >
                     <span className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.35),transparent_55%)]" />
-                    <span className="absolute bottom-1.5 left-3 text-4xl font-extrabold leading-none text-white/90">
+                    <span className="absolute bottom-1.5 left-3 text-4xl font-serif font-bold leading-none text-[#f4f1e9]">
                       {productInitial(item.name)}
                     </span>
-                    <span className="absolute right-2 top-2 rounded-full bg-black/30 p-1.5 text-white/80 backdrop-blur-sm">
+                    <span className="absolute right-2 top-2 rounded-full bg-ink/45 p-1.5 text-[#f4f1e9] backdrop-blur-sm">
                       <CategoryIcon category={item.category} />
                     </span>
                     {item.stock <= 0 ? (
-                      <span className="absolute inset-0 flex items-center justify-center bg-black/65 text-[11px] font-bold uppercase tracking-[0.16em] text-white">
+                      <span className="absolute inset-0 flex items-center justify-center bg-ink/70 text-[11px] font-bold uppercase tracking-[0.16em] text-[#f4f1e9]">
                         Habis
                       </span>
                     ) : null}
@@ -485,7 +485,7 @@ export function PosTerminal({
                       className="flex gap-3 rounded-xl border border-line bg-surface-2 p-2.5"
                     >
                       <div
-                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-sm font-extrabold text-white/90"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-sm font-serif font-extrabold text-[#f4f1e9]"
                         style={{ backgroundImage: productGradient(line.name) }}
                       >
                         {productInitial(line.name)}
@@ -525,7 +525,7 @@ export function PosTerminal({
               </div>
               <div className="mt-1.5 flex items-center justify-between">
                 <span className="text-sm font-semibold text-ink">Total</span>
-                <span className="text-lg font-extrabold tabular-nums text-ember">{formatRupiah(total)}</span>
+                <span className="text-lg font-serif font-bold tabular-nums text-ember">{formatRupiah(total)}</span>
               </div>
 
               <Segmented

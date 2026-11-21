@@ -2,7 +2,7 @@ import Link from "next/link"
 import { ReceiptText } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import { formatDateTime, formatRupiah } from "@/lib/format"
-import { buildDailyTotals, buildItemQuantities, toAmount } from "@/lib/reports"
+import { buildDailyTotals, buildItemQuantities } from "@/lib/reports"
 import { requireUser } from "@/lib/session"
 import { AppShell } from "@/components/shell/AppShell"
 import { PageHeader } from "@/components/shell/PageHeader"
@@ -19,16 +19,21 @@ export const metadata = { title: "Owner" }
 export default async function OwnerPage() {
   const user = await requireUser(["OWNER"])
 
-  const transactions = await prisma.transaction.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      user: {
-        select: { id: true, email: true, name: true, role: true },
+  const since = new Date(Date.now() - 30 * 86_400_000)
+  const [transactions, revenue] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { createdAt: { gte: since } },
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: { id: true, email: true, name: true, role: true },
+        },
       },
-    },
-  })
+    }),
+    prisma.transaction.aggregate({ _sum: { total: true } }),
+  ])
 
-  const totalRevenue = transactions.reduce((sum, tx) => sum + toAmount(tx.total), 0)
+  const totalRevenue = Number(revenue._sum.total ?? 0)
   const daily = buildDailyTotals(transactions)
   const quantities = buildItemQuantities(transactions)
   const itemCount = Array.from(quantities.values()).reduce((sum, quantity) => sum + quantity, 0)

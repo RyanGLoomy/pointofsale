@@ -95,23 +95,23 @@ export function LoginForm() {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_50px_120px_-50px_rgba(0,0,0,0.95)] lg:grid-cols-[1.05fr_1fr]">
-        <section className="relative hidden flex-col justify-between overflow-hidden bg-[#0d1016] p-10 lg:flex">
+      <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_50px_120px_-50px_rgba(0,0,0,0.45)] lg:grid-cols-[1.05fr_1fr]">
+        <section className="hidden flex-col justify-between overflow-hidden bg-ember p-10 lg:flex">
           <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-ember/20 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 -left-20 h-64 w-64 rounded-full bg-info/10 blur-3xl" />
 
           <div className="relative">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-ember text-[#180a02]">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f4f1e9] text-[#1f5d48]">
                 <Store className="h-5 w-5" />
               </span>
-              <span className="text-sm font-bold tracking-tight text-ink">Point of Sale</span>
+              <span className="text-sm font-bold tracking-tight text-[#f4f1e9]">Point of Sale</span>
             </div>
 
-            <h2 className="mt-10 max-w-sm text-4xl font-extrabold leading-[1.1] tracking-tight text-ink">
-              Kasir yang rapi. <span className="text-ember">Laporan yang jelas.</span>
+            <h2 className="mt-10 max-w-sm text-4xl font-serif leading-[1.1] tracking-tight text-[#f4f1e9]">
+              Kasir yang rapi. <span className="text-[#e8dcc3]">Laporan yang jelas.</span>
             </h2>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#d8d0bf]">
               Satu tempat untuk pesanan, stok, dan performa toko.
             </p>
 
@@ -120,12 +120,12 @@ export function LoginForm() {
                 const Icon = item.icon
                 return (
                   <li key={item.title} className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-surface-2 text-ember">
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-[#f4f1e9]">
                       <Icon className="h-4 w-4" />
                     </span>
                     <div>
-                      <p className="text-sm font-semibold text-ink">{item.title}</p>
-                      <p className="text-xs text-muted">{item.description}</p>
+                      <p className="text-sm font-semibold text-[#f4f1e9]">{item.title}</p>
+                      <p className="text-xs text-[#d8d0bf]">{item.description}</p>
                     </div>
                   </li>
                 )
@@ -133,12 +133,12 @@ export function LoginForm() {
             </ul>
           </div>
 
-          <p className="relative text-[11px] text-muted">Sistem point of sale internal.</p>
+          <p className="relative text-[11px] text-[#c9c0ae]">Sistem point of sale internal.</p>
         </section>
 
         <section className="p-6 sm:p-10">
           <div className="flex items-center gap-2.5 lg:hidden">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ember text-[#180a02]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f4f1e9] text-[#1f5d48]">
               <Store className="h-4 w-4" />
             </span>
             <span className="text-sm font-bold tracking-tight text-ink">Point of Sale</span>

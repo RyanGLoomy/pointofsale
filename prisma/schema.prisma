@@ -50,6 +50,8 @@ model Menu {
   orders      OrderItem[]
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([active, category])
 }
 
 model OrderItem {
@@ -61,6 +63,9 @@ model OrderItem {
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   menu  Menu  @relation(fields: [menuId], references: [id])
+
+  @@index([orderId])
+  @@index([menuId])
 }
 
 model Order {
@@ -83,4 +88,7 @@ model Transaction {
   total         Decimal  @default(0) @db.Decimal(10, 2)
   paymentMethod PaymentMethod @default(CASH)
   createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }
