@@ -84,7 +84,21 @@ Guarantees:
 - role/active state is read from the DB on every request; stale JWT cannot authorize.
 - logout stays on the same origin and clears `pos.cart.v1`.
 
+## Fine-tuning batch (items 1–4)
+
+| Item | RED / GREEN evidence |
+|------|----------------------|
+| 1. Lockout DB | `src/lib/lockout.test.ts` RED (module missing) → GREEN 7/7. `LoginAttempt` table pushed (`prisma db push`, diff clean). E2E: 5 failed logins show "Akun terkunci ... Coba lagi dalam N menit"; unique test email, rows cleaned afterwards. |
+| 2. Strict CSP | `src/lib/product-visual.test.ts` RED (`productToneClass is not a function`) → GREEN 9/9. All `style={{...}}` removed; dynamic values via nonced `<style>`. Browser check: 0 CSP violations, gradients and chart bars computed correctly. |
+| 3. Guard consistency | `/admin` now `requirePermission("users:manage")` instead of a role array. |
+| 4. Action denial | `src/actions/action-guards.test.ts` 6/6: checkoutPOS denied for ADMIN/OWNER, createMenu denied for KASIR/OWNER, createAccount denied for KASIR/OWNER — all before DB writes. |
+
+Full verification after batch: build, tsc, lint, 162 unit tests, coverage 100% stmts/funcs/lines & 96.93% branches, **25/25 E2E** (18 original + 7 RBAC/lockout), npm audit 0.
+
 ## Known gaps
+
+- Vercel SSO still blocks unauthenticated browser/smoke checks on preview; app-level verification was done locally and via authenticated user session.
+- Lockout window remains 5 attempts / 5 minutes; no admin unlock UI (account deactivation is available).
 
 - `npm audit` was 3 high from Prisma 7's `@prisma/config` pinning `effect@3.20.0` (ReDoS in `<=3.22.0`). Resolved with `overrides.effect = 3.22.5` — same major, patched. Re-verified: prisma validate/generate, build, tsc, lint, 110 tests, coverage, 18/18 E2E; `npm audit` now reports 0 vulnerabilities.
 - In-memory login lockout resets on server restart; acceptable for single-instance POS deployment.
