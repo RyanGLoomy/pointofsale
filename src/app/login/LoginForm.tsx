@@ -97,10 +97,7 @@ export function LoginForm() {
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_50px_120px_-50px_rgba(0,0,0,0.45)] lg:grid-cols-[1.05fr_1fr]">
         <section className="hidden flex-col justify-between overflow-hidden bg-ember p-10 lg:flex">
-          <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-ember/20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -left-20 h-64 w-64 rounded-full bg-info/10 blur-3xl" />
-
-          <div className="relative">
+          <div>
             <div className="flex items-center gap-2.5">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f4f1e9] text-[#1f5d48]">
                 <Store className="h-5 w-5" />
@@ -115,7 +112,7 @@ export function LoginForm() {
               Satu tempat untuk pesanan, stok, dan performa toko.
             </p>
 
-            <ul className="mt-8 space-y-4">
+            <ul className="mt-6 space-y-3">
               {highlights.map((item) => {
                 const Icon = item.icon
                 return (
@@ -133,7 +130,7 @@ export function LoginForm() {
             </ul>
           </div>
 
-          <p className="relative text-[11px] text-[#c9c0ae]">Sistem point of sale internal.</p>
+          <p className="mt-6 text-[11px] text-[#c9c0ae]">Sistem point of sale internal.</p>
         </section>
 
         <section className="p-6 sm:p-10">
