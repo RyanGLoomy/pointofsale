@@ -28,6 +28,7 @@ interface NavItem {
   permission?: Permission
   roles?: string[]
   exact?: boolean
+  prefetch?: boolean
 }
 
 const navItems: NavItem[] = [
@@ -37,6 +38,7 @@ const navItems: NavItem[] = [
     shortLabel: "Kasir",
     icon: ShoppingCart,
     permission: "transactions:create",
+    prefetch: true,
   },
   {
     href: "/admin",
@@ -66,6 +68,7 @@ const navItems: NavItem[] = [
     shortLabel: "Riwayat",
     icon: ReceiptText,
     permission: "transactions:read",
+    prefetch: true,
   },
   {
     href: "/admin/reports",
@@ -73,6 +76,7 @@ const navItems: NavItem[] = [
     shortLabel: "Laporan",
     icon: BarChart3,
     permission: "reports:read",
+    prefetch: true,
   },
   { href: "/owner", label: "Owner", shortLabel: "Owner", icon: Crown, roles: ["OWNER"] },
 ]
@@ -144,6 +148,7 @@ export function Sidebar({ role, name, email }: { role: string; name: string; ema
             <li key={item.href} className="min-w-0 flex-1 md:flex-none">
               <Link
                 href={item.href}
+                prefetch={item.prefetch}
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
                 className={cn(

@@ -95,6 +95,16 @@ Guarantees:
 
 Full verification after batch: build, tsc, lint, 162 unit tests, coverage 100% stmts/funcs/lines & 96.93% branches, **25/25 E2E** (18 original + 7 RBAC/lockout), npm audit 0.
 
+## Perf tuning (login & navigasi)
+
+| Perubahan | Bukti |
+|-----------|-------|
+| `getDbUser` dibungkus `React.cache()` — layout & page berbagi 1 query DB per request | dokumentasi Next 16: React.cache mendeduplikasi query ORM dalam satu request |
+| Login: hapus `getSession()` + `router.refresh()`, `router.replace("/")` memakai redirect role dari JWT | Playwright timing: **2602 ms → 1340 ms**, `/api/auth/session` **1 → 0** |
+| Sidebar `prefetch={true}` untuk Kasir / Riwayat / Laporan | Playwright: klik Laporan **0 request jaringan** saat navigasi (prefetch penuh), 3x berturut-turut 177/130/133 ms |
+
+Verifikasi: 162 unit tests, build/tsc/lint ok, **25/25 E2E** lulus setelah perubahan.
+
 ## Known gaps
 
 - Vercel SSO still blocks unauthenticated browser/smoke checks on preview; app-level verification was done locally and via authenticated user session.

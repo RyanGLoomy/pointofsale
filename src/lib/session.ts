@@ -1,7 +1,17 @@
+import { cache } from "react"
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { hasPermission, type Permission } from "@/lib/permissions"
+
+// Layout and page both need the signed-in user in the same request. React
+// cache deduplicates this DB read so navigation costs one query, not two.
+const getDbUser = cache(async (id: string) =>
+  prisma.user.findUnique({
+    where: { id },
+    select: { id: true, name: true, email: true, role: true, active: true },
+  }),
+)
 
 export interface ShellUser {
   id: string
@@ -23,10 +33,7 @@ export async function requireUser(roles?: string[]): Promise<ShellUser> {
     redirect("/login")
   }
 
-  const dbUser = await prisma.user.findUnique({
-    where: { id: sessionUser.id },
-    select: { id: true, name: true, email: true, role: true, active: true },
-  })
+  const dbUser = await getDbUser(sessionUser.id)
 
   if (!dbUser || !dbUser.active) {
     redirect("/login")

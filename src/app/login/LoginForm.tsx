@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { getSession, signIn } from "next-auth/react"
+import { signIn } from "next-auth/react"
 import { getLoginLockState } from "@/actions/auth"
 import { ArrowRight, BarChart3, LockKeyhole, ShieldCheck, ShoppingCart, Store } from "lucide-react"
 import type { FormEvent } from "react"
@@ -92,12 +92,10 @@ export function LoginForm() {
       return
     }
 
-    const session = await getSession()
-    const role = session?.user?.role
-
     setPending(false)
-    router.replace(role === "ADMIN" ? "/admin" : role === "OWNER" ? "/owner" : "/kasir")
-    router.refresh()
+    // "/" already redirects by role from the JWT, so no extra getSession()
+    // round trip and no duplicate router.refresh() are needed here.
+    router.replace("/")
   }
 
   return (
