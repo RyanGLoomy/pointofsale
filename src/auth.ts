@@ -5,6 +5,34 @@ import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 
+const MAX_FAILED_ATTEMPTS = 5
+const LOCKOUT_MINUTES = 5
+
+const failedAttempts = new Map<string, number[]>()
+
+const DUMMY_HASH = bcrypt.hashSync("timing-equalization-dummy-password", 10)
+
+function isLockedOut(email: string): boolean {
+  const attempts = failedAttempts.get(email) ?? []
+  const now = Date.now()
+  const recent = attempts.filter((at) => now - at < LOCKOUT_MINUTES * 60_000)
+  if (recent.length >= MAX_FAILED_ATTEMPTS) {
+    failedAttempts.set(email, recent)
+    return true
+  }
+  return false
+}
+
+function registerFailedAttempt(email: string): void {
+  const attempts = failedAttempts.get(email) ?? []
+  attempts.push(Date.now())
+  failedAttempts.set(email, attempts)
+}
+
+function clearFailedAttempts(email: string): void {
+  failedAttempts.delete(email)
+}
+
 export const authOptions = {
   providers: [
     Credentials({
@@ -18,19 +46,27 @@ export const authOptions = {
         _request: Request,
       ) {
         void _request
-        const email = credentials?.email as string | undefined
-        const password = credentials?.password as string | undefined
+        const email = typeof credentials?.email === "string" ? credentials.email.trim().toLowerCase() : ""
+        const password = typeof credentials?.password === "string" ? credentials.password : ""
 
         if (!email || !password) return null
+
+        if (isLockedOut(email)) return null
 
         const user = await prisma.user.findUnique({
           where: { email },
         })
 
-        if (!user || !user.active) return null
+        const passwordMatches = user
+          ? await bcrypt.compare(password, user.password)
+          : await bcrypt.compare(password, DUMMY_HASH)
 
-        const passwordMatches = await bcrypt.compare(password, user.password)
-        if (!passwordMatches) return null
+        if (!user || !user.active || !passwordMatches) {
+          registerFailedAttempt(email)
+          return null
+        }
+
+        clearFailedAttempts(email)
 
         return {
           id: user.id,

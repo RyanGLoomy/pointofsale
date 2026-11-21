@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
-import { validateCheckoutInput, type CheckoutPayload } from "./checkout"
+import { validateCheckoutInput, type CheckoutInput } from "./checkout"
 
-const validPayload: CheckoutPayload = {
+const validPayload: CheckoutInput = {
   userId: "user-1",
   items: [{ menuId: "menu-1", quantity: 2 }],
   paymentMethod: "CASH",

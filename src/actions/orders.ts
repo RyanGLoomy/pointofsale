@@ -1,17 +1,23 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { requirePermission } from "@/lib/session"
+import { validateCheckoutInput } from "@/lib/checkout"
 
-export async function checkoutPOS(input: {
-  userId: string
-  items: { menuId: string; quantity: number }[]
-  paymentMethod: "CASH" | "CARD" | "QRIS"
-}): Promise<{ orderId: string; total: number }> {
-  const { userId, items, paymentMethod } = input
+export async function checkoutPOS(input: unknown): Promise<{ orderId: string; total: number }> {
+  const session = await requirePermission("transactions:create")
+  const validated = validateCheckoutInput(input)
+
+  if (!validated.ok) {
+    throw new Error(validated.error)
+  }
+
+  const { items, paymentMethod } = validated.value
+  const userId = session.id
 
   const result = await prisma.$transaction(async (tx) => {
     const menus = await tx.menu.findMany({
-      where: { id: { in: items.map((item) => item.menuId) }, active: true },
+      where: { id: { in: items.map((item) => item.menuId) } },
     })
 
     const menuMap = new Map(menus.map((menu) => [menu.id, menu]))
@@ -21,7 +27,7 @@ export async function checkoutPOS(input: {
 
     for (const item of items) {
       const menu = menuMap.get(item.menuId)
-      if (!menu) {
+      if (!menu || !menu.active) {
         throw new Error("Menu tidak ditemukan.")
       }
       if (menu.stock < item.quantity) {
@@ -44,21 +50,22 @@ export async function checkoutPOS(input: {
       data: {
         orderId: order.id,
         userId,
-        items: {
-          orderId: order.id,
-          userId,
-          items,
-        },
+        items: { items: orderItems.map((item) => ({ menuId: item.menuId, quantity: item.quantity })) },
         total,
         paymentMethod,
       },
     })
 
-    for (const item of items) {
-      await tx.menu.update({
-        where: { id: item.menuId },
+    for (const item of orderItems) {
+      // Atomic conditional decrement: fails without partial stock changes.
+      const updated = await tx.menu.updateMany({
+        where: { id: item.menuId, stock: { gte: item.quantity } },
         data: { stock: { decrement: item.quantity } },
       })
+
+      if (updated.count !== 1) {
+        throw new Error(`Stok tidak mencukupi untuk menu id ${item.menuId}.`)
+      }
     }
 
     return { orderId: order.id, total }

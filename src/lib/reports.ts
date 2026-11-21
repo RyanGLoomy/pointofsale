@@ -25,7 +25,7 @@ const jakartaDayFormatter = new Intl.DateTimeFormat("en-CA", {
  * Calendar day key in the store's local timezone (Asia/Jakarta) so reports
  * never group transactions across a UTC day boundary.
  */
-export function jakartaDayKey(value: Date | string): string {
+export function jakartaDayKey(value: Date | string | number): string {
   const parts = jakartaDayFormatter.formatToParts(new Date(value))
   const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "00"
   return `${get("year")}-${get("month")}-${get("day")}`

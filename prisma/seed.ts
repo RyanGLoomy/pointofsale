@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs"
 
 const prisma = new PrismaClient()
 
-const DEFAULT_PASSWORD = "Pointofsale123!"
+const DEFAULT_PASSWORD = process.env.DEV_SEED_PASSWORD ?? "Pointofsale123!"
 
 async function main() {
   const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10)
