@@ -61,6 +61,29 @@ upgrade "Next 16 + Prisma 7", backend coverage "Semua".
 | GREEN | same | PASS — 7/7; full suite 110/110, coverage unchanged |
 | Commit | `git log feat/pos-v2` | `0b00324` (RED), `d1f485d` (GREEN) |
 
+## RBAC v2 (PRD implementation)
+
+Source PRD: `/home/neotron/.opencode/plan/role-access-prd.md`
+
+| Stage | Command | Result |
+|-------|---------|--------|
+| RED (permission matrix) | `npx vitest run src/lib/permissions.test.ts` | FAIL — 7 cases (KASIR transactions:read, ADMIN orders:manage/transactions:create/reports:print, OWNER orders:manage/transactions:create, receipt:print:own) |
+| GREEN | same + `npx tsc --noEmit` | PASS — 26/26 |
+| RED (account schemas) | `npx vitest run src/lib/accounts.test.ts` | FAIL — module missing |
+| GREEN | same | PASS — 8/8 |
+| RED (PDF model) | `npx vitest run src/lib/report-pdf.test.ts` | FAIL — module missing |
+| GREEN | same | PASS — 4/4 |
+| Full suite | `npm run test:coverage` | PASS — 147 tests, 100% stmts/funcs/lines, 96.93% branches |
+| E2E | `npx playwright test` | PASS — 24/24 (18 existing + 6 RBAC) |
+| Commits | `git log feat/pos-v2` | `017cd5a`/`4e7b411`, `ed1e401`/`f37d0b7`, `bfeafb8` |
+
+Guarantees:
+- KASIR cannot reach `/admin/*` or `/owner` and has no `transactions:read`; only Kasir nav item.
+- ADMIN cannot reach `/kasir` or `/owner`; sees accounts/menu/transactions/reports; `Unduh PDF` visible and downloads `laporan-penjualan-YYYY-MM-DD.pdf`.
+- OWNER cannot reach `/kasir` or `/admin` management pages; reports are read-only with no PDF button.
+- role/active state is read from the DB on every request; stale JWT cannot authorize.
+- logout stays on the same origin and clears `pos.cart.v1`.
+
 ## Known gaps
 
 - `npm audit` was 3 high from Prisma 7's `@prisma/config` pinning `effect@3.20.0` (ReDoS in `<=3.22.0`). Resolved with `overrides.effect = 3.22.5` — same major, patched. Re-verified: prisma validate/generate, build, tsc, lint, 110 tests, coverage, 18/18 E2E; `npm audit` now reports 0 vulnerabilities.
