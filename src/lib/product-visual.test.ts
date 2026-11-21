@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { productGradient, productInitial } from "./product-visual"
+import { productGradient, productInitial, productToneClass, PRODUCT_TONE_GRADIENTS } from "./product-visual"
 
 // The Pasar design language uses muted earth tones, not saturated neon.
 const EARTH_TONES = new Set([
@@ -36,6 +36,19 @@ describe("productGradient", () => {
 
   it("handles an empty seed", () => {
     expect(productGradient("")).toMatch(/^linear-gradient\(135deg/)
+  })
+})
+
+describe("productToneClass", () => {
+  it("returns a deterministic class within the defined tone range", () => {
+    const first = productToneClass("Kopi Suroko")
+    expect(first).toBe(productToneClass("Kopi Suroko"))
+    expect(first).toMatch(/^product-tone-[0-7]$/)
+  })
+
+  it("maps to a gradient provided for CSS injection", () => {
+    const index = Number(productToneClass("Teh Tarik").split("-").at(-1))
+    expect(PRODUCT_TONE_GRADIENTS[index]).toMatch(/^linear-gradient\(/)
   })
 })
 
