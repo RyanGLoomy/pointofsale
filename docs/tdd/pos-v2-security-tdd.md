@@ -53,6 +53,14 @@ upgrade "Next 16 + Prisma 7", backend coverage "Semua".
 - RED validated on `feat/pos-v2` before GREEN implementation; GREEN validated by full suite re-run.
 - Phase gates: baseline (build/tsc/lint/tests) → Phase 1 fix → Phase 2 upgrade → Phase 4 design → Phase 5/6 hardening → final verification.
 
+## Follow-up: product tile palette
+
+| Stage | Command | Result |
+|-------|---------|--------|
+| RED | `npx vitest run src/lib/product-visual.test.ts` | FAIL — `Kopi Suroko -> #06b6d4` not in earth-tone set |
+| GREEN | same | PASS — 7/7; full suite 110/110, coverage unchanged |
+| Commit | `git log feat/pos-v2` | `0b00324` (RED), `d1f485d` (GREEN) |
+
 ## Known gaps
 
 - `npm audit` reports 3 high findings, all from Prisma 7 dependency chain (`effect` ReDoS); the suggested fix forces a Prisma downgrade (breaking), so it is deferred.
