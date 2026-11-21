@@ -96,6 +96,22 @@ test.describe("RBAC v2 — hak akses per peran", () => {
   })
 })
 
+test.describe("Login lockout", () => {
+  test("menampilkan pesan terkunci setelah 5 kali gagal", async ({ page }) => {
+    const email = `lockout-${Date.now()}@pointofsale.id`
+    await page.goto("/login")
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await page.fill("#email", email)
+      await page.fill("#password", "password-salah-sengaja")
+      await page.click('button[type="submit"]')
+    }
+
+    await expect(page.locator('form [role="alert"]')).toContainText("Akun terkunci", { timeout: 15000 })
+    await expect(page.locator('form [role="alert"]')).toContainText("Coba lagi dalam")
+  })
+})
+
 test.describe("Logout & cart", () => {
   test("logout tetap di origin yang sama dan mengosongkan keranjang", async ({ page }) => {
     await login(page, "kasir@pointofsale.id")
