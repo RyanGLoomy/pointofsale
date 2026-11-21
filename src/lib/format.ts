@@ -3,12 +3,14 @@ const rupiahFormatter = new Intl.NumberFormat("id-ID")
 const dateTimeFormatter = new Intl.DateTimeFormat("id-ID", {
   dateStyle: "medium",
   timeStyle: "short",
+  timeZone: "Asia/Jakarta",
 })
 
 const fullDateFormatter = new Intl.DateTimeFormat("id-ID", {
   day: "2-digit",
   month: "short",
   year: "numeric",
+  timeZone: "Asia/Jakarta",
 })
 
 export function formatRupiah(value: number): string {

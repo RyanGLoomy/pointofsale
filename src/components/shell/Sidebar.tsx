@@ -3,6 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
+import { CART_STORAGE_KEY } from "@/lib/cart"
+import { hasPermission, type Permission } from "@/lib/permissions"
 import type { LucideIcon } from "lucide-react"
 import {
   BarChart3,
@@ -12,6 +14,7 @@ import {
   ReceiptText,
   ShoppingCart,
   Store,
+  Users,
   UtensilsCrossed,
 } from "lucide-react"
 import { cn } from "@/lib/format"
@@ -22,7 +25,8 @@ interface NavItem {
   label: string
   shortLabel: string
   icon: LucideIcon
-  roles: string[]
+  permission?: Permission
+  roles?: string[]
   exact?: boolean
 }
 
@@ -32,36 +36,43 @@ const navItems: NavItem[] = [
     label: "Kasir",
     shortLabel: "Kasir",
     icon: ShoppingCart,
-    roles: ["KASIR", "ADMIN", "OWNER"],
+    permission: "transactions:create",
   },
   {
     href: "/admin",
     label: "Admin",
     shortLabel: "Admin",
     icon: LayoutDashboard,
-    roles: ["ADMIN", "OWNER"],
+    permission: "users:manage",
     exact: true,
+  },
+  {
+    href: "/admin/accounts",
+    label: "Kelola Akun",
+    shortLabel: "Akun",
+    icon: Users,
+    permission: "users:manage",
   },
   {
     href: "/admin/menus",
     label: "Kelola Menu",
     shortLabel: "Menu",
     icon: UtensilsCrossed,
-    roles: ["ADMIN", "OWNER"],
+    permission: "menu:manage",
   },
   {
     href: "/admin/transactions",
     label: "Transaksi",
     shortLabel: "Riwayat",
     icon: ReceiptText,
-    roles: ["ADMIN", "OWNER"],
+    permission: "transactions:read",
   },
   {
     href: "/admin/reports",
     label: "Laporan",
     shortLabel: "Laporan",
     icon: BarChart3,
-    roles: ["ADMIN", "OWNER"],
+    permission: "reports:read",
   },
   { href: "/owner", label: "Owner", shortLabel: "Owner", icon: Crown, roles: ["OWNER"] },
 ]
@@ -81,7 +92,11 @@ function initials(name: string): string {
 export function Sidebar({ role, name, email }: { role: string; name: string; email: string }) {
   const pathname = usePathname()
   const confirm = useConfirm()
-  const visibleItems = navItems.filter((item) => item.roles.includes(role))
+  const visibleItems = navItems.filter((item) => {
+    const allowedByPermission = item.permission ? hasPermission(role, item.permission) : true
+    const allowedByRole = item.roles ? item.roles.includes(role) : true
+    return allowedByPermission && allowedByRole
+  })
 
   async function handleSignOut() {
     const confirmed = await confirm({
@@ -92,6 +107,8 @@ export function Sidebar({ role, name, email }: { role: string; name: string; ema
     })
 
     if (confirmed) {
+      // Never carry one cashier's in-progress cart into the next session.
+      window.localStorage.removeItem(CART_STORAGE_KEY)
       await signOut({ redirectTo: "/login" })
     }
   }
@@ -105,7 +122,7 @@ export function Sidebar({ role, name, email }: { role: string; name: string; ema
         <Link
           href="/kasir"
           aria-label="Point of Sale"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ember text-[#180a02] shadow-[0_18px_38px_-18px_rgba(255,122,26,1)]"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ember text-[#f4f1e9] shadow-[0_18px_38px_-18px_rgba(31,93,72,0.55)]"
         >
           <Store className="h-5 w-5" />
         </Link>
@@ -133,7 +150,7 @@ export function Sidebar({ role, name, email }: { role: string; name: string; ema
                   "relative flex h-14 w-full flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-semibold transition-colors md:h-10 md:flex-row md:justify-start md:gap-2.5 md:px-3 md:text-sm",
                   active
                     ? "bg-ember-soft text-ember"
-                    : "text-muted hover:bg-white/5 hover:text-ink",
+                    : "text-muted hover:bg-ink/5 hover:text-ink",
                 )}
               >
                 {active ? (

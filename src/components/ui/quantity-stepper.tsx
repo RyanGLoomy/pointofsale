@@ -17,7 +17,7 @@ export function QuantityStepper({
         type="button"
         aria-label="Kurangi jumlah"
         onClick={onDecrease}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:bg-white/5 hover:text-ink"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:bg-ink/5 hover:text-ink"
       >
         <Minus className="h-3.5 w-3.5" />
       </button>
@@ -27,7 +27,7 @@ export function QuantityStepper({
         aria-label="Tambah jumlah"
         onClick={onIncrease}
         disabled={quantity >= max}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:bg-white/5 hover:text-ink disabled:pointer-events-none disabled:opacity-40"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:bg-ink/5 hover:text-ink disabled:pointer-events-none disabled:opacity-40"
       >
         <Plus className="h-3.5 w-3.5" />
       </button>

@@ -1,9 +1,9 @@
 import { PackageSearch } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import { formatFullDate, formatRupiah } from "@/lib/format"
-import { buildDailyTotals, buildItemQuantities, toAmount } from "@/lib/reports"
-import { requireUser } from "@/lib/session"
-import { AppShell } from "@/components/shell/AppShell"
+import { buildDailyTotals, buildItemQuantities, REPORT_WINDOW_DAYS } from "@/lib/reports"
+import { requirePermission } from "@/lib/session"
+import { hasPermission } from "@/lib/permissions"
 import { PageHeader } from "@/components/shell/PageHeader"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,17 +12,23 @@ import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table"
 import { KpiGrid } from "@/components/reports/KpiGrid"
 import { SalesChart } from "@/components/reports/SalesChart"
 import { TopMenusCard } from "@/components/reports/TopMenusCard"
+import { ReportPdfButton } from "@/components/reports/ReportPdfButton"
 
 export const metadata = { title: "Laporan Penjualan" }
 
 export default async function AdminReportsPage() {
-  const user = await requireUser(["ADMIN", "OWNER"])
+  const user = await requirePermission("reports:read")
 
-  const transactions = await prisma.transaction.findMany({
-    orderBy: { createdAt: "desc" },
-  })
+  const since = new Date(Date.now() - REPORT_WINDOW_DAYS * 86_400_000)
+  const [transactions, revenue] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { createdAt: { gte: since } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.transaction.aggregate({ where: { createdAt: { gte: since } }, _sum: { total: true } }),
+  ])
 
-  const totalRevenue = transactions.reduce((sum, tx) => sum + toAmount(tx.total), 0)
+  const totalRevenue = Number(revenue._sum.total ?? 0)
   const daily = buildDailyTotals(transactions)
   const quantities = buildItemQuantities(transactions)
   const itemCount = Array.from(quantities.values()).reduce((sum, quantity) => sum + quantity, 0)
@@ -44,12 +50,27 @@ export default async function AdminReportsPage() {
   }))
 
   return (
-    <AppShell user={user}>
+    <>
       <PageHeader
         eyebrow="Analitik"
         title="Laporan Penjualan"
         description="Ringkasan performa penjualan berdasarkan transaksi yang tercatat."
-        actions={<Badge tone="ember">Semua waktu</Badge>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Badge tone="ember">{REPORT_WINDOW_DAYS} hari terakhir</Badge>
+            {hasPermission(user.role, "reports:print") ? (
+              <ReportPdfButton
+                windowDays={REPORT_WINDOW_DAYS}
+                totalRevenue={totalRevenue}
+                transactionCount={transactions.length}
+                itemCount={itemCount}
+                average={average}
+                daily={daily}
+                topMenus={topRows.map((row) => ({ name: row.name, quantity: row.quantity }))}
+              />
+            ) : null}
+          </div>
+        }
       />
 
       <div className="mt-6 space-y-4">
@@ -93,7 +114,7 @@ export default async function AdminReportsPage() {
           )}
         </Card>
       </div>
-    </AppShell>
+    </>
   )
 }
 
