@@ -7,10 +7,10 @@ type Size = "sm" | "md" | "lg"
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    "bg-ember text-[#180a02] shadow-[0_16px_38px_-18px_rgba(255,122,26,0.95)] hover:bg-ember-strong",
+    "bg-ember text-[#f4f1e9] shadow-[0_16px_38px_-18px_rgba(31,93,72,0.55)] hover:bg-ember-strong",
   secondary:
-    "border border-line bg-surface-2 text-ink hover:border-white/20 hover:bg-[#1d222b]",
-  ghost: "text-muted hover:bg-white/5 hover:text-ink",
+    "border border-line bg-surface-2 text-ink hover:border-ink/25 hover:bg-ink/5",
+  ghost: "text-muted hover:bg-ink/5 hover:text-ink",
   danger: "border border-danger/30 bg-danger/10 text-danger hover:bg-danger/20",
 }
 

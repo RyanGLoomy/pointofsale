@@ -105,7 +105,7 @@ export function Sidebar({ role, name, email }: { role: string; name: string; ema
         <Link
           href="/kasir"
           aria-label="Point of Sale"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ember text-[#180a02] shadow-[0_18px_38px_-18px_rgba(255,122,26,1)]"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ember text-[#f4f1e9] shadow-[0_18px_38px_-18px_rgba(31,93,72,0.55)]"
         >
           <Store className="h-5 w-5" />
         </Link>
@@ -133,7 +133,7 @@ export function Sidebar({ role, name, email }: { role: string; name: string; ema
                   "relative flex h-14 w-full flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-semibold transition-colors md:h-10 md:flex-row md:justify-start md:gap-2.5 md:px-3 md:text-sm",
                   active
                     ? "bg-ember-soft text-ember"
-                    : "text-muted hover:bg-white/5 hover:text-ink",
+                    : "text-muted hover:bg-ink/5 hover:text-ink",
                 )}
               >
                 {active ? (

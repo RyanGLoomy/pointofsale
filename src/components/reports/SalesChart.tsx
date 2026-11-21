@@ -46,7 +46,7 @@ export function SalesChart({ data }: { data: DailyTotal[] }) {
                     className={
                       hasSales
                         ? "w-full rounded-t-md bg-gradient-to-t from-ember/30 to-ember transition-opacity hover:opacity-80"
-                        : "w-full rounded-t bg-white/10"
+                        : "w-full rounded-t bg-ink/10"
                     }
                     style={{ height }}
                   />

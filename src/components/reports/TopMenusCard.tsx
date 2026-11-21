@@ -39,7 +39,7 @@ export function TopMenusCard({ rows }: { rows: TopMenuRow[] }) {
                 </span>
                 <Badge tone="neutral">{row.quantity} terjual</Badge>
               </div>
-              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-white/5">
+              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-ink/10">
                 <div
                   className="h-full rounded-full bg-ember"
                   style={{ width: `${Math.max(6, Math.round((row.quantity / max) * 100))}%` }}

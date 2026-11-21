@@ -2,7 +2,7 @@ import type { ReactNode } from "react"
 import { cn } from "@/lib/format"
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div aria-hidden="true" className={cn("animate-pulse rounded-lg bg-white/[0.06]", className)} />
+  return <div aria-hidden="true" className={cn("animate-pulse rounded-lg bg-ink/10", className)} />
 }
 
 export function PageSkeleton() {

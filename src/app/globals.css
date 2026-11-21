@@ -14,24 +14,26 @@
   --color-danger: var(--danger);
   --color-warning: var(--warning);
   --color-info: var(--info);
-  --font-sans: var(--font-plus-jakarta);
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
 }
 
 :root {
-  --bg: #090b0f;
-  --surface: #11141a;
-  --surface-2: #171b22;
-  --line: #252b35;
-  --ink: #eef1f4;
-  --muted: #97a0ac;
-  --ember: #ff7a1a;
-  --ember-strong: #ff9444;
-  --ember-soft: #2b1a0d;
-  --success: #34d399;
-  --danger: #fb7185;
-  --warning: #fbbf24;
-  --info: #60a5fa;
-  color-scheme: dark;
+  --bg: #f4f1e9;
+  --surface: #fcfaf5;
+  --surface-2: #efeadf;
+  --line: #ded7c8;
+  --ink: #1c1b17;
+  --muted: #777165;
+  --ember: #1f5d48;
+  --ember-strong: #174936;
+  --ember-soft: #e3ede6;
+  --success: #2e7d5b;
+  --danger: #a33a2a;
+  --warning: #b4552d;
+  --info: #3e6489;
+  color-scheme: light;
 }
 
 html {
@@ -42,23 +44,19 @@ html {
 body {
   min-height: 100vh;
   background-color: var(--bg);
-  background-image:
-    radial-gradient(900px 520px at 88% -12%, rgba(255, 122, 26, 0.1), transparent 62%),
-    radial-gradient(760px 480px at -12% 8%, rgba(96, 165, 250, 0.06), transparent 58%);
-  background-attachment: fixed;
   color: var(--ink);
-  font-family: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background: rgba(255, 122, 26, 0.35);
-  color: #fff;
+  background: rgba(31, 93, 72, 0.25);
+  color: var(--ink);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2c333e transparent;
+  scrollbar-color: #c9c0ab transparent;
 }
 
 input[type="number"]::-webkit-inner-spin-button,
