@@ -13,7 +13,6 @@ import { prisma } from "@/lib/prisma"
 import { formatDateTime, formatRupiah } from "@/lib/format"
 import { productGradient, productInitial } from "@/lib/product-visual"
 import { requireUser } from "@/lib/session"
-import { AppShell } from "@/components/shell/AppShell"
 import { PageHeader } from "@/components/shell/PageHeader"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,6 +24,12 @@ import { PaymentMethodBadge } from "@/components/payment-method-badge"
 export const metadata = { title: "Ringkasan" }
 
 const quickLinks = [
+  {
+    href: "/admin/accounts",
+    title: "Kelola Akun",
+    description: "Tambah pengguna dan atur peran serta status aksesnya.",
+    icon: Users,
+  },
   {
     href: "/admin/menus",
     title: "Kelola Menu",
@@ -46,7 +51,7 @@ const quickLinks = [
 ]
 
 export default async function AdminDashboardPage() {
-  const user = await requireUser(["ADMIN", "OWNER"])
+  await requireUser(["ADMIN"])
 
   const [userCount, menuCount, orderCount, transactionCount, revenue, recentTransactions, lowStockMenus] =
     await Promise.all([
@@ -72,7 +77,7 @@ export default async function AdminDashboardPage() {
   const totalRevenue = Number(revenue._sum.total ?? 0)
 
   return (
-    <AppShell user={user}>
+    <>
       <PageHeader
         eyebrow="Admin"
         title="Ringkasan"
@@ -180,7 +185,7 @@ export default async function AdminDashboardPage() {
         </Card>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {quickLinks.map((link) => {
           const Icon = link.icon
           return (
@@ -201,7 +206,7 @@ export default async function AdminDashboardPage() {
           )
         })}
       </div>
-    </AppShell>
+    </>
   )
 }
 

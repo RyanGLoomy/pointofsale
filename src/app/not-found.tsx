@@ -14,7 +14,7 @@ export default function NotFound() {
           Tautan ini tidak tersedia atau sudah dipindahkan.
         </p>
         <Link
-          href="/kasir"
+          href="/"
           className="mt-6 inline-flex h-10 w-full items-center justify-center rounded-xl bg-ember px-4 text-sm font-semibold text-[#f4f1e9] transition-colors hover:bg-ember-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
           Kembali ke kasir

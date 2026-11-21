@@ -1,8 +1,7 @@
 import { ReceiptText, Users, Wallet } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import { formatRupiah } from "@/lib/format"
-import { requireUser } from "@/lib/session"
-import { AppShell } from "@/components/shell/AppShell"
+import { requirePermission } from "@/lib/session"
 import { PageHeader } from "@/components/shell/PageHeader"
 import { Badge } from "@/components/ui/badge"
 import { StatCard } from "@/components/ui/stat-card"
@@ -11,7 +10,7 @@ import { TransactionHistory, type TransactionRow } from "@/components/Transactio
 export const metadata = { title: "Riwayat Transaksi" }
 
 export default async function AdminTransactionsPage() {
-  const user = await requireUser(["ADMIN", "OWNER"])
+  await requirePermission("transactions:read")
 
   const transactions = await prisma.transaction.findMany({
     orderBy: { createdAt: "desc" },
@@ -62,7 +61,7 @@ export default async function AdminTransactionsPage() {
   const cashierCount = new Set(transactions.map((tx) => tx.userId)).size
 
   return (
-    <AppShell user={user}>
+    <>
       <PageHeader
         eyebrow="Riwayat"
         title="Riwayat Transaksi"
@@ -77,7 +76,7 @@ export default async function AdminTransactionsPage() {
       </div>
 
       <TransactionHistory rows={rows} />
-    </AppShell>
+    </>
   )
 }
 

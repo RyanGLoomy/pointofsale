@@ -1,13 +1,13 @@
 import { BarChart3 } from "lucide-react"
 import { formatDay, formatRupiah } from "@/lib/format"
-import { fillDailySeries, type DailyTotal } from "@/lib/reports"
+import { fillDailySeries, REPORT_WINDOW_DAYS, type DailyTotal } from "@/lib/reports"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
 
 const CHART_HEIGHT = 168
 
 export function SalesChart({ data }: { data: DailyTotal[] }) {
-  const series = fillDailySeries(data)
+  const series = fillDailySeries(data, { days: REPORT_WINDOW_DAYS })
   const max = Math.max(1, ...series.map((entry) => entry.total))
   const total = series.reduce((sum, entry) => sum + entry.total, 0)
   const lastIndex = series.length - 1
@@ -17,7 +17,7 @@ export function SalesChart({ data }: { data: DailyTotal[] }) {
       <CardHeader>
         <div>
           <CardTitle>Penjualan Harian</CardTitle>
-          <p className="mt-0.5 text-[11px] text-muted">14 hari terakhir</p>
+          <p className="mt-0.5 text-[11px] text-muted">{REPORT_WINDOW_DAYS} hari terakhir</p>
         </div>
         <span className="text-sm font-bold tabular-nums text-ember">{formatRupiah(total)}</span>
       </CardHeader>

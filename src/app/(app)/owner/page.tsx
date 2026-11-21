@@ -1,9 +1,9 @@
-import { PackageSearch } from "lucide-react"
+import Link from "next/link"
+import { ReceiptText } from "lucide-react"
 import { prisma } from "@/lib/prisma"
-import { formatFullDate, formatRupiah } from "@/lib/format"
-import { buildDailyTotals, buildItemQuantities } from "@/lib/reports"
+import { formatDateTime, formatRupiah } from "@/lib/format"
+import { buildDailyTotals, buildItemQuantities, REPORT_WINDOW_DAYS } from "@/lib/reports"
 import { requireUser } from "@/lib/session"
-import { AppShell } from "@/components/shell/AppShell"
 import { PageHeader } from "@/components/shell/PageHeader"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,18 +13,23 @@ import { KpiGrid } from "@/components/reports/KpiGrid"
 import { SalesChart } from "@/components/reports/SalesChart"
 import { TopMenusCard } from "@/components/reports/TopMenusCard"
 
-export const metadata = { title: "Laporan Penjualan" }
+export const metadata = { title: "Owner" }
 
-export default async function AdminReportsPage() {
-  const user = await requireUser(["ADMIN", "OWNER"])
+export default async function OwnerPage() {
+  await requireUser(["OWNER"])
 
-  const since = new Date(Date.now() - 30 * 86_400_000)
+  const since = new Date(Date.now() - REPORT_WINDOW_DAYS * 86_400_000)
   const [transactions, revenue] = await Promise.all([
     prisma.transaction.findMany({
       where: { createdAt: { gte: since } },
       orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: { id: true, email: true, name: true, role: true },
+        },
+      },
     }),
-    prisma.transaction.aggregate({ _sum: { total: true } }),
+    prisma.transaction.aggregate({ where: { createdAt: { gte: since } }, _sum: { total: true } }),
   ])
 
   const totalRevenue = Number(revenue._sum.total ?? 0)
@@ -49,12 +54,19 @@ export default async function AdminReportsPage() {
   }))
 
   return (
-    <AppShell user={user}>
+    <>
       <PageHeader
-        eyebrow="Analitik"
+        eyebrow="Owner"
         title="Laporan Penjualan"
-        description="Ringkasan performa penjualan berdasarkan transaksi yang tercatat."
-        actions={<Badge tone="ember">Semua waktu</Badge>}
+        description="Ringkasan omzet, transaksi, dan menu terlaris milik toko."
+        actions={
+          <Link
+            href="/admin/reports"
+            className="inline-flex h-9 items-center rounded-xl border border-line bg-surface-2 px-3 text-xs font-semibold text-muted transition-colors hover:text-ink"
+          >
+            Laporan lengkap
+          </Link>
+        }
       />
 
       <div className="mt-6 space-y-4">
@@ -73,24 +85,30 @@ export default async function AdminReportsPage() {
 
         <Card className="overflow-hidden">
           <CardHeader>
-            <CardTitle>Rekap Harian</CardTitle>
-            <Badge tone="neutral">{daily.length} hari</Badge>
+            <CardTitle>Transaksi Terbaru</CardTitle>
+            <Badge tone="neutral">{transactions.length} transaksi</Badge>
           </CardHeader>
-          {daily.length === 0 ? (
-            <EmptyState icon={PackageSearch} title="Belum ada rekap" description="Rekap muncul setelah ada transaksi." />
+          {transactions.length === 0 ? (
+            <EmptyState
+              icon={ReceiptText}
+              title="Belum ada transaksi"
+              description="Transaksi dari terminal kasir akan muncul di sini."
+            />
           ) : (
-            <Table className="min-w-[420px]">
+            <Table>
               <THead>
                 <TR>
-                  <TH>Tanggal</TH>
-                  <TH className="text-right">Total Penjualan</TH>
+                  <TH>Waktu</TH>
+                  <TH>Kasir</TH>
+                  <TH className="text-right">Total</TH>
                 </TR>
               </THead>
               <TBody>
-                {daily.map((entry) => (
-                  <TR key={entry.day}>
-                    <TD className="text-muted">{formatFullDate(`${entry.day}T00:00:00Z`)}</TD>
-                    <TD className="text-right font-semibold tabular-nums">{formatRupiah(entry.total)}</TD>
+                {transactions.slice(0, 10).map((tx) => (
+                  <TR key={tx.id}>
+                    <TD className="whitespace-nowrap text-xs text-muted">{formatDateTime(tx.createdAt)}</TD>
+                    <TD className="font-semibold text-ink">{tx.user?.name ?? tx.user?.email ?? "-"}</TD>
+                    <TD className="text-right font-bold tabular-nums">{formatRupiah(Number(tx.total))}</TD>
                   </TR>
                 ))}
               </TBody>
@@ -98,7 +116,7 @@ export default async function AdminReportsPage() {
           )}
         </Card>
       </div>
-    </AppShell>
+    </>
   )
 }
 

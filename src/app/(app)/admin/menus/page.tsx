@@ -1,14 +1,13 @@
 import { MenuManager, type MenuRow } from "@/components/MenuManager"
-import { AppShell } from "@/components/shell/AppShell"
 import { PageHeader } from "@/components/shell/PageHeader"
 import { Badge } from "@/components/ui/badge"
 import { prisma } from "@/lib/prisma"
-import { requireUser } from "@/lib/session"
+import { requirePermission } from "@/lib/session"
 
 export const metadata = { title: "Kelola Menu" }
 
 export default async function AdminMenusPage() {
-  const user = await requireUser(["ADMIN", "OWNER"])
+  await requirePermission("menu:manage")
 
   const menus = await prisma.menu.findMany({
     orderBy: { name: "asc" },
@@ -25,7 +24,7 @@ export default async function AdminMenusPage() {
   }))
 
   return (
-    <AppShell user={user}>
+    <>
       <PageHeader
         eyebrow="Katalog"
         title="Kelola Data Menu"
@@ -33,7 +32,7 @@ export default async function AdminMenusPage() {
         actions={<Badge tone="ember">{rows.length} menu</Badge>}
       />
       <MenuManager menus={rows} />
-    </AppShell>
+    </>
   )
 }
 

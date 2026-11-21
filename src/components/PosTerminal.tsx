@@ -95,11 +95,9 @@ function readStoredCart(items: PosItem[]): CartLine[] {
 
 export function PosTerminal({
   items,
-  userId,
   cashierName,
 }: {
   items: PosItem[]
-  userId: string
   cashierName: string
 }) {
   const router = useRouter()
@@ -286,7 +284,6 @@ export function PosTerminal({
 
     try {
       const result = await checkoutPOS({
-        userId,
         items: snapshot.map((line) => ({ menuId: line.menuId, quantity: line.quantity })),
         paymentMethod,
       })

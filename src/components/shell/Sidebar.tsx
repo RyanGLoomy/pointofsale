@@ -3,6 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
+import { CART_STORAGE_KEY } from "@/lib/cart"
+import { hasPermission, type Permission } from "@/lib/permissions"
 import type { LucideIcon } from "lucide-react"
 import {
   BarChart3,
@@ -12,6 +14,7 @@ import {
   ReceiptText,
   ShoppingCart,
   Store,
+  Users,
   UtensilsCrossed,
 } from "lucide-react"
 import { cn } from "@/lib/format"
@@ -22,7 +25,8 @@ interface NavItem {
   label: string
   shortLabel: string
   icon: LucideIcon
-  roles: string[]
+  permission?: Permission
+  roles?: string[]
   exact?: boolean
 }
 
@@ -32,36 +36,43 @@ const navItems: NavItem[] = [
     label: "Kasir",
     shortLabel: "Kasir",
     icon: ShoppingCart,
-    roles: ["KASIR", "ADMIN", "OWNER"],
+    permission: "transactions:create",
   },
   {
     href: "/admin",
     label: "Admin",
     shortLabel: "Admin",
     icon: LayoutDashboard,
-    roles: ["ADMIN", "OWNER"],
+    permission: "users:manage",
     exact: true,
+  },
+  {
+    href: "/admin/accounts",
+    label: "Kelola Akun",
+    shortLabel: "Akun",
+    icon: Users,
+    permission: "users:manage",
   },
   {
     href: "/admin/menus",
     label: "Kelola Menu",
     shortLabel: "Menu",
     icon: UtensilsCrossed,
-    roles: ["ADMIN", "OWNER"],
+    permission: "menu:manage",
   },
   {
     href: "/admin/transactions",
     label: "Transaksi",
     shortLabel: "Riwayat",
     icon: ReceiptText,
-    roles: ["ADMIN", "OWNER"],
+    permission: "transactions:read",
   },
   {
     href: "/admin/reports",
     label: "Laporan",
     shortLabel: "Laporan",
     icon: BarChart3,
-    roles: ["ADMIN", "OWNER"],
+    permission: "reports:read",
   },
   { href: "/owner", label: "Owner", shortLabel: "Owner", icon: Crown, roles: ["OWNER"] },
 ]
@@ -81,7 +92,11 @@ function initials(name: string): string {
 export function Sidebar({ role, name, email }: { role: string; name: string; email: string }) {
   const pathname = usePathname()
   const confirm = useConfirm()
-  const visibleItems = navItems.filter((item) => item.roles.includes(role))
+  const visibleItems = navItems.filter((item) => {
+    const allowedByPermission = item.permission ? hasPermission(role, item.permission) : true
+    const allowedByRole = item.roles ? item.roles.includes(role) : true
+    return allowedByPermission && allowedByRole
+  })
 
   async function handleSignOut() {
     const confirmed = await confirm({
@@ -92,6 +107,8 @@ export function Sidebar({ role, name, email }: { role: string; name: string; ema
     })
 
     if (confirmed) {
+      // Never carry one cashier's in-progress cart into the next session.
+      window.localStorage.removeItem(CART_STORAGE_KEY)
       await signOut({ redirectTo: "/login" })
     }
   }

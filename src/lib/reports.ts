@@ -1,3 +1,5 @@
+export const REPORT_WINDOW_DAYS = 30
+
 export interface ReportTransaction {
   total: unknown
   createdAt: Date | string

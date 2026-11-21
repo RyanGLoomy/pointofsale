@@ -4,7 +4,6 @@ export const MAX_CHECKOUT_LINES = 50
 export const MAX_LINE_QUANTITY = 99
 
 export const checkoutSchema = z.object({
-  userId: z.string().min(1, "User wajib diisi."),
   items: z
     .array(
       z.object({

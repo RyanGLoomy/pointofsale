@@ -34,6 +34,9 @@ function clearFailedAttempts(email: string): void {
 }
 
 export const authOptions = {
+  // Trust the host forwarded by the reverse proxy (Vercel) instead of a
+  // hardcoded AUTH_URL, so sign-out redirects stay on the current origin.
+  trustHost: true,
   providers: [
     Credentials({
       name: "Credentials",

@@ -10,41 +10,21 @@ export interface ShellUser {
   role: string
 }
 
+/**
+ * Loads the signed-in user fresh from the database. Role and active state come
+ * from the DB, never from the session token, so a stale JWT cannot authorize a
+ * page or action after the account has been changed or deactivated.
+ */
 export async function requireUser(roles?: string[]): Promise<ShellUser> {
   const session = await auth()
-  const user = session?.user
+  const sessionUser = session?.user
 
-  if (!user?.id) {
-    redirect("/login")
-  }
-
-  if (roles && roles.length > 0 && !roles.includes(user.role ?? "")) {
-    redirect("/login")
-  }
-
-  return {
-    id: user.id,
-    name: user.name ?? "Pengguna",
-    email: user.email ?? "",
-    role: user.role ?? "KASIR",
-  }
-}
-
-/**
- * Server-side authorization gate for server actions. Loads the signed-in user
- * from the database (fresh role/active state) and throws when the permission is
- * not held, so client-supplied role data can never authorize a mutation.
- */
-export async function requirePermission(permission: Permission): Promise<ShellUser> {
-  const session = await auth()
-  const user = session?.user
-
-  if (!user?.id) {
+  if (!sessionUser?.id) {
     redirect("/login")
   }
 
   const dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
+    where: { id: sessionUser.id },
     select: { id: true, name: true, email: true, role: true, active: true },
   })
 
@@ -52,16 +32,25 @@ export async function requirePermission(permission: Permission): Promise<ShellUs
     redirect("/login")
   }
 
-  const shellUser: ShellUser = {
+  if (roles && roles.length > 0 && !roles.includes(dbUser.role)) {
+    redirect("/login")
+  }
+
+  return {
     id: dbUser.id,
     name: dbUser.name ?? "Pengguna",
     email: dbUser.email ?? "",
     role: dbUser.role,
   }
+}
 
-  if (!hasPermission(shellUser.role, permission)) {
+/** Server-side authorization gate for pages and server actions. */
+export async function requirePermission(permission: Permission): Promise<ShellUser> {
+  const user = await requireUser()
+
+  if (!hasPermission(user.role, permission)) {
     redirect("/login")
   }
 
-  return shellUser
+  return user
 }

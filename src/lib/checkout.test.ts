@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest"
 import { validateCheckoutInput, type CheckoutInput } from "./checkout"
 
 const validPayload: CheckoutInput = {
-  userId: "user-1",
   items: [{ menuId: "menu-1", quantity: 2 }],
   paymentMethod: "CASH",
 }
@@ -15,7 +14,6 @@ describe("validateCheckoutInput", () => {
   it("accepts multiple distinct menu lines", () => {
     expect(
       validateCheckoutInput({
-        userId: "user-1",
         items: [
           { menuId: "menu-1", quantity: 1 },
           { menuId: "menu-2", quantity: 3 },
@@ -25,7 +23,6 @@ describe("validateCheckoutInput", () => {
     ).toEqual({
       ok: true,
       value: {
-        userId: "user-1",
         items: [
           { menuId: "menu-1", quantity: 1 },
           { menuId: "menu-2", quantity: 3 },
@@ -80,7 +77,4 @@ describe("validateCheckoutInput", () => {
     expect(validateCheckoutInput({ ...validPayload, paymentMethod: "TRANSFER" }).ok).toBe(false)
   })
 
-  it("rejects a missing user id", () => {
-    expect(validateCheckoutInput({ ...validPayload, userId: "" }).ok).toBe(false)
-  })
 })

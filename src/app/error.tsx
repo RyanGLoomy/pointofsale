@@ -35,7 +35,7 @@ export default function GlobalError({
             Coba lagi
           </button>
           <Link
-            href="/kasir"
+            href="/"
             className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-line bg-surface-2 px-4 text-sm font-semibold text-ink transition-colors hover:border-ink/25 hover:bg-ink/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember/60"
           >
             Ke kasir
