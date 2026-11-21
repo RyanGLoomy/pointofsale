@@ -63,6 +63,6 @@ upgrade "Next 16 + Prisma 7", backend coverage "Semua".
 
 ## Known gaps
 
-- `npm audit` reports 3 high findings, all from Prisma 7 dependency chain (`effect` ReDoS); the suggested fix forces a Prisma downgrade (breaking), so it is deferred.
+- `npm audit` was 3 high from Prisma 7's `@prisma/config` pinning `effect@3.20.0` (ReDoS in `<=3.22.0`). Resolved with `overrides.effect = 3.22.5` — same major, patched. Re-verified: prisma validate/generate, build, tsc, lint, 110 tests, coverage, 18/18 E2E; `npm audit` now reports 0 vulnerabilities.
 - In-memory login lockout resets on server restart; acceptable for single-instance POS deployment.
 - CSP nonce wired via Next 16 proxy; pages are dynamically rendered (auth-gated), nonce applied during SSR.
