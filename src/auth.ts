@@ -4,34 +4,9 @@ import type { JWT } from "next-auth/jwt"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
-
-const MAX_FAILED_ATTEMPTS = 5
-const LOCKOUT_MINUTES = 5
-
-const failedAttempts = new Map<string, number[]>()
+import { clearFailedLogins, getLockState, registerFailedLogin } from "@/lib/lockout-store"
 
 const DUMMY_HASH = bcrypt.hashSync("timing-equalization-dummy-password", 10)
-
-function isLockedOut(email: string): boolean {
-  const attempts = failedAttempts.get(email) ?? []
-  const now = Date.now()
-  const recent = attempts.filter((at) => now - at < LOCKOUT_MINUTES * 60_000)
-  if (recent.length >= MAX_FAILED_ATTEMPTS) {
-    failedAttempts.set(email, recent)
-    return true
-  }
-  return false
-}
-
-function registerFailedAttempt(email: string): void {
-  const attempts = failedAttempts.get(email) ?? []
-  attempts.push(Date.now())
-  failedAttempts.set(email, attempts)
-}
-
-function clearFailedAttempts(email: string): void {
-  failedAttempts.delete(email)
-}
 
 export const authOptions = {
   // Trust the host forwarded by the reverse proxy (Vercel) instead of a
@@ -54,7 +29,7 @@ export const authOptions = {
 
         if (!email || !password) return null
 
-        if (isLockedOut(email)) return null
+        if ((await getLockState(email)).locked) return null
 
         const user = await prisma.user.findUnique({
           where: { email },
@@ -65,11 +40,11 @@ export const authOptions = {
           : await bcrypt.compare(password, DUMMY_HASH)
 
         if (!user || !user.active || !passwordMatches) {
-          registerFailedAttempt(email)
+          await registerFailedLogin(email)
           return null
         }
 
-        clearFailedAttempts(email)
+        await clearFailedLogins(email)
 
         return {
           id: user.id,

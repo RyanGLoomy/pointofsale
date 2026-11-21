@@ -39,6 +39,15 @@ model User {
   transactions Transaction[]
 }
 
+/// Tracks failed login attempts per normalized email. Kept in the database so
+/// lockouts survive restarts and work across multiple app instances.
+model LoginAttempt {
+  email       String   @id
+  failedCount Int      @default(0)
+  lockedUntil DateTime?
+  updatedAt   DateTime @updatedAt
+}
+
 model Menu {
   id          String   @id @default(uuid()) @db.Uuid
   name        String

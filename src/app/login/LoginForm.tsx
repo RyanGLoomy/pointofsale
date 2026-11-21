@@ -3,6 +3,7 @@
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getSession, signIn } from "next-auth/react"
+import { getLoginLockState } from "@/actions/auth"
 import { ArrowRight, BarChart3, LockKeyhole, ShieldCheck, ShoppingCart, Store } from "lucide-react"
 import type { FormEvent } from "react"
 import { Button } from "@/components/ui/button"
@@ -79,7 +80,13 @@ export function LoginForm() {
 
     if (result?.error) {
       setPending(false)
-      setError("Email atau password salah.")
+      const lock = await getLoginLockState(email.trim())
+      if (lock.locked) {
+        const minutes = Math.max(1, Math.ceil(lock.remainingSeconds / 60))
+        setError(`Akun terkunci setelah 5 kali gagal. Coba lagi dalam ${minutes} menit.`)
+      } else {
+        setError("Email atau password salah.")
+      }
       passwordRef.current?.focus()
       passwordRef.current?.select()
       return
