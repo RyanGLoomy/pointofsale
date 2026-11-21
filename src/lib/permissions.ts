@@ -1,24 +1,21 @@
-import type { Role } from "@prisma/client"
+import type { Role } from "@/generated/client"
+
+export type { Role }
 
 export type Permission =
   | "orders:manage"
   | "transactions:create"
   | "transactions:read"
-  | "reports:read"
+  | "receipt:print:own"
   | "menu:manage"
   | "users:manage"
+  | "reports:read"
+  | "reports:print"
 
 const rolePermissions: Record<Role, Permission[]> = {
-  KASIR: ["orders:manage", "transactions:create", "transactions:read"],
-  ADMIN: [
-    "orders:manage",
-    "transactions:create",
-    "transactions:read",
-    "menu:manage",
-    "users:manage",
-    "reports:read",
-  ],
-  OWNER: ["orders:manage", "transactions:create", "transactions:read", "reports:read"],
+  KASIR: ["orders:manage", "transactions:create", "receipt:print:own"],
+  ADMIN: ["users:manage", "menu:manage", "reports:read", "reports:print", "transactions:read"],
+  OWNER: ["reports:read", "transactions:read"],
 }
 
 export function hasPermission(role: string | undefined, permission: Permission): boolean {
