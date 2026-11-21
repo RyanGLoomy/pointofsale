@@ -1,12 +1,14 @@
+// Muted earth tones that sit inside the warm Pasar palette. Dark enough for
+// the cream product initial drawn on top of the gradient.
 const palettes = [
-  ["#f97316", "#9a3412"],
-  ["#14b8a6", "#0f766e"],
-  ["#6366f1", "#3730a3"],
-  ["#ec4899", "#831843"],
-  ["#eab308", "#713f12"],
-  ["#22c55e", "#14532d"],
-  ["#06b6d4", "#155e75"],
-  ["#a855f7", "#581c87"],
+  ["#a6533a", "#74392a"], // terracotta
+  ["#5c7049", "#3c4b30"], // olive
+  ["#9c6b48", "#6e482f"], // clay
+  ["#2f6b53", "#1d4736"], // pine
+  ["#a38342", "#755c28"], // ochre
+  ["#7a4f5a", "#54343d"], // plum
+  ["#3e6a6a", "#274646"], // teal
+  ["#5b4a6b", "#3b2f49"], // aubergine
 ] as const
 
 export function productGradient(seed: string): string {
