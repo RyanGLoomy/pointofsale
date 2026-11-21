@@ -12,7 +12,7 @@ import {
 import { prisma } from "@/lib/prisma"
 import { cn, formatDateTime, formatRupiah } from "@/lib/format"
 import { productInitial, productToneClass } from "@/lib/product-visual"
-import { requireUser } from "@/lib/session"
+import { requirePermission } from "@/lib/session"
 import { PageHeader } from "@/components/shell/PageHeader"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -51,7 +51,7 @@ const quickLinks = [
 ]
 
 export default async function AdminDashboardPage() {
-  await requireUser(["ADMIN"])
+  await requirePermission("users:manage")
 
   const [userCount, menuCount, orderCount, transactionCount, revenue, recentTransactions, lowStockMenus] =
     await Promise.all([
