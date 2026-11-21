@@ -14,6 +14,29 @@ export interface ItemQuantity {
   quantity: number
 }
 
+const jakartaDayFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Jakarta",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+})
+
+/**
+ * Calendar day key in the store's local timezone (Asia/Jakarta) so reports
+ * never group transactions across a UTC day boundary.
+ */
+export function jakartaDayKey(value: Date | string): string {
+  const parts = jakartaDayFormatter.formatToParts(new Date(value))
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "00"
+  return `${get("year")}-${get("month")}-${get("day")}`
+}
+
+function jakartaDayParts(value: Date): { year: number; month: number; day: number } {
+  const parts = jakartaDayFormatter.formatToParts(value)
+  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? 0)
+  return { year: get("year"), month: get("month"), day: get("day") }
+}
+
 export function toAmount(value: unknown): number {
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : 0
@@ -38,7 +61,7 @@ export function buildDailyTotals(transactions: ReportTransaction[]): DailyTotal[
   const totals = new Map<string, number>()
 
   for (const transaction of transactions) {
-    const day = new Date(transaction.createdAt).toISOString().slice(0, 10)
+    const day = jakartaDayKey(transaction.createdAt)
     totals.set(day, (totals.get(day) ?? 0) + toAmount(transaction.total))
   }
 
@@ -53,15 +76,13 @@ export function fillDailySeries(
 ): DailyTotal[] {
   const days = Math.max(1, Math.floor(options.days ?? 14))
   const reference = options.reference ?? new Date()
-  const end = Date.UTC(
-    reference.getUTCFullYear(),
-    reference.getUTCMonth(),
-    reference.getUTCDate(),
-  )
+  const { year, month, day } = jakartaDayParts(reference)
+  const end = Date.UTC(year, month - 1, day, 0, 0, 0)
   const totals = new Map(data.map((entry) => [entry.day, entry.total]))
 
   return Array.from({ length: days }, (_, index) => {
-    const day = new Date(end - (days - 1 - index) * 86_400_000).toISOString().slice(0, 10)
+    const instant = end - (days - 1 - index) * 86_400_000
+    const day = jakartaDayKey(instant)
     return { day, total: totals.get(day) ?? 0 }
   })
 }
