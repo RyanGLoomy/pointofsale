@@ -1,3 +1,4 @@
+import { headers } from "next/headers"
 import { PackageSearch } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,12 +10,17 @@ export interface TopMenuRow {
   quantity: number
 }
 
-export function TopMenusCard({ rows }: { rows: TopMenuRow[] }) {
+export async function TopMenusCard({ rows }: { rows: TopMenuRow[] }) {
   const max = Math.max(1, ...rows.map((row) => row.quantity))
   const totalItems = rows.reduce((sum, row) => sum + row.quantity, 0)
 
+  const widths = rows.map((row) => Math.max(6, Math.round((row.quantity / max) * 100)))
+  const nonce = (await headers()).get("x-nonce") ?? ""
+  const css = Array.from(new Set(widths), (width) => `.top-menu-w-${width}{width:${width}%}`).join("")
+
   return (
     <Card className="flex h-full flex-col">
+      <style nonce={nonce} dangerouslySetInnerHTML={{ __html: css }} />
       <CardHeader>
         <CardTitle>Menu Terlaris</CardTitle>
         <Badge tone="neutral">Top 5</Badge>
@@ -40,10 +46,7 @@ export function TopMenusCard({ rows }: { rows: TopMenuRow[] }) {
                 <Badge tone="neutral">{row.quantity} terjual</Badge>
               </div>
               <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-ink/10">
-                <div
-                  className="h-full rounded-full bg-ember"
-                  style={{ width: `${Math.max(6, Math.round((row.quantity / max) * 100))}%` }}
-                />
+                <div className={`top-menu-w-${widths[index]} h-full rounded-full bg-ember`} />
               </div>
             </li>
           ))}

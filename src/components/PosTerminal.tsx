@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 import { checkoutPOS } from "@/actions/orders"
 import { cn, formatRupiah } from "@/lib/format"
-import { productGradient, productInitial } from "@/lib/product-visual"
+import { productInitial, productToneClass } from "@/lib/product-visual"
 import {
   addLine,
   CART_STORAGE_KEY,
@@ -414,8 +414,7 @@ export function PosTerminal({
                   className="group flex flex-col rounded-2xl border border-line bg-surface p-2.5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-ember/50 hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
                 >
                   <div
-                    className="relative aspect-[4/3] w-full overflow-hidden rounded-xl"
-                    style={{ backgroundImage: productGradient(item.name) }}
+                    className={cn("relative aspect-[4/3] w-full overflow-hidden rounded-xl", productToneClass(item.name))}
                   >
                     <span className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.35),transparent_55%)]" />
                     <span className="absolute bottom-1.5 left-3 text-4xl font-serif font-bold leading-none text-[#f4f1e9]">
@@ -482,8 +481,7 @@ export function PosTerminal({
                       className="flex gap-3 rounded-xl border border-line bg-surface-2 p-2.5"
                     >
                       <div
-                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-sm font-serif font-extrabold text-[#f4f1e9]"
-                        style={{ backgroundImage: productGradient(line.name) }}
+                        className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-sm font-serif font-extrabold text-[#f4f1e9]", productToneClass(line.name))}
                       >
                         {productInitial(line.name)}
                       </div>

@@ -10,8 +10,8 @@ import {
   Wallet,
 } from "lucide-react"
 import { prisma } from "@/lib/prisma"
-import { formatDateTime, formatRupiah } from "@/lib/format"
-import { productGradient, productInitial } from "@/lib/product-visual"
+import { cn, formatDateTime, formatRupiah } from "@/lib/format"
+import { productInitial, productToneClass } from "@/lib/product-visual"
 import { requireUser } from "@/lib/session"
 import { PageHeader } from "@/components/shell/PageHeader"
 import { Badge } from "@/components/ui/badge"
@@ -166,8 +166,7 @@ export default async function AdminDashboardPage() {
               {lowStockMenus.map((menu) => (
                 <li key={menu.id} className="flex items-center gap-3 px-4 py-3">
                   <div
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-serif text-xs font-bold text-[#f4f1e9]"
-                    style={{ backgroundImage: productGradient(menu.name) }}
+                    className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-serif text-xs font-bold text-[#f4f1e9]", productToneClass(menu.name))}
                   >
                     {productInitial(menu.name)}
                   </div>

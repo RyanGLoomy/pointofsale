@@ -2,10 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 
 function buildCsp(nonce: string, isDev: boolean): string {
   const scriptSrc = `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`
-  // shortcut: data-driven inline styles (chart bars, product gradients) need
-  // 'unsafe-inline' here; a nonce in style-src would make the browser ignore it.
-  // Upgrade by moving dynamic values to CSS custom properties on nonced <style>.
-  const styleSrc = `style-src 'self' 'unsafe-inline'`
+  const styleSrc = `style-src 'self' 'nonce-${nonce}'`
 
   return `
     default-src 'self';

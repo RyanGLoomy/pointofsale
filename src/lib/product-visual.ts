@@ -11,13 +11,26 @@ const palettes = [
   ["#5b4a6b", "#3b2f49"], // aubergine
 ] as const
 
-export function productGradient(seed: string): string {
+/** All tone gradients, injected once via a nonced <style> tag in the layout. */
+export const PRODUCT_TONE_GRADIENTS: readonly string[] = palettes.map(
+  ([from, to]) => `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+)
+
+function productTone(seed: string): number {
   let hash = 0
   for (let index = 0; index < seed.length; index += 1) {
     hash = (hash * 31 + seed.charCodeAt(index)) >>> 0
   }
-  const [from, to] = palettes[hash % palettes.length]
-  return `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
+  return hash % PRODUCT_TONE_GRADIENTS.length
+}
+
+/** Stable CSS class instead of an inline style, so strict CSP still applies. */
+export function productToneClass(seed: string): string {
+  return `product-tone-${productTone(seed)}`
+}
+
+export function productGradient(seed: string): string {
+  return PRODUCT_TONE_GRADIENTS[productTone(seed)]
 }
 
 export function productInitial(name: string): string {
