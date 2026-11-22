@@ -116,6 +116,12 @@ Verifikasi: 162 unit tests, build/tsc/lint ok, **25/25 E2E** lulus setelah perub
 
 Verifikasi: build, tsc, lint, 170 unit, coverage ≥80%, **26/26 E2E**, audit 0.
 
+## Initial menu photos
+
+- Production deployment promoted: `dpl_8yWDBU5DSjfVbtG3Z7RiStgQQYHn` (commit `abc45d6`).
+- Tiga menu awal diberi foto CC0 dari Wikimedia Commons, diunggah ke Blob, dan `Menu.imageUrl` diisi (lihat `docs/menu-images.md`).
+- Verifikasi browser di URL production: 3 tile kasir memuat gambar dari host Blob (`naturalWidth=960`), 0 pelanggaran CSP.
+
 ## Known gaps
 
 - Vercel SSO still blocks unauthenticated browser/smoke checks on preview; app-level verification was done locally and via authenticated user session.
