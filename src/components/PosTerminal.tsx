@@ -62,6 +62,7 @@ export interface PosItem {
   price: number
   stock: number
   category?: string | null
+  imageUrl?: string | null
 }
 
 const paymentOptions: SegmentedOption<PaymentMethod>[] = [
@@ -416,10 +417,17 @@ export function PosTerminal({
                   <div
                     className={cn("relative aspect-[4/3] w-full overflow-hidden rounded-xl", productToneClass(item.name))}
                   >
-                    <span className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.35),transparent_55%)]" />
-                    <span className="absolute bottom-1.5 left-3 text-4xl font-serif font-bold leading-none text-[#f4f1e9]">
-                      {productInitial(item.name)}
-                    </span>
+                    {item.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.imageUrl} alt={item.name} className="absolute inset-0 h-full w-full object-cover" />
+                    ) : (
+                      <>
+                        <span className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.35),transparent_55%)]" />
+                        <span className="absolute bottom-1.5 left-3 text-4xl font-serif font-bold leading-none text-[#f4f1e9]">
+                          {productInitial(item.name)}
+                        </span>
+                      </>
+                    )}
                     <span className="absolute right-2 top-2 rounded-full bg-ink/45 p-1.5 text-[#f4f1e9] backdrop-blur-sm">
                       <CategoryIcon category={item.category} />
                     </span>

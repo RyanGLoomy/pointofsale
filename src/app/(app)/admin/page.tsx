@@ -71,6 +71,7 @@ export default async function AdminDashboardPage() {
         where: { active: true, stock: { lte: 5 } },
         orderBy: { stock: "asc" },
         take: 5,
+        select: { id: true, name: true, category: true, stock: true, imageUrl: true },
       }),
     ])
 
@@ -166,9 +167,14 @@ export default async function AdminDashboardPage() {
               {lowStockMenus.map((menu) => (
                 <li key={menu.id} className="flex items-center gap-3 px-4 py-3">
                   <div
-                    className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-serif text-xs font-bold text-[#f4f1e9]", productToneClass(menu.name))}
+                    className={cn("flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg font-serif text-xs font-bold text-[#f4f1e9]", productToneClass(menu.name))}
                   >
-                    {productInitial(menu.name)}
+                    {menu.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={menu.imageUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      productInitial(menu.name)
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-ink">{menu.name}</p>

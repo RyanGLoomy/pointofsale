@@ -8,7 +8,7 @@ function buildCsp(nonce: string, isDev: boolean): string {
     default-src 'self';
     ${scriptSrc};
     ${styleSrc};
-    img-src 'self' blob: data:;
+    img-src 'self' blob: data: https://dyynq9ij1vrolopt.public.blob.vercel-storage.com;
     font-src 'self';
     object-src 'none';
     base-uri 'self';

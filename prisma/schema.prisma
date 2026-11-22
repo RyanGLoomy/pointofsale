@@ -55,6 +55,7 @@ model Menu {
   price       Decimal  @db.Decimal(10, 2)
   stock       Int      @default(0)
   category    String?
+  imageUrl    String?
   active      Boolean  @default(true)
   orders      OrderItem[]
   createdAt  DateTime @default(now()) @map("created_at")

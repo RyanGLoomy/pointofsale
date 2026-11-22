@@ -11,6 +11,7 @@ export default async function KasirPage() {
 
   const menus = await prisma.menu.findMany({
     where: { active: true },
+    select: { id: true, name: true, price: true, stock: true, category: true, imageUrl: true },
     orderBy: { name: "asc" },
   })
 
@@ -20,6 +21,7 @@ export default async function KasirPage() {
     price: Number(menu.price),
     stock: menu.stock,
     category: menu.category,
+    imageUrl: menu.imageUrl,
   }))
 
   return (

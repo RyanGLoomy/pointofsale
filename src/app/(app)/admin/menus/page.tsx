@@ -21,6 +21,7 @@ export default async function AdminMenusPage() {
     stock: menu.stock,
     category: menu.category,
     active: menu.active,
+    imageUrl: menu.imageUrl,
   }))
 
   return (

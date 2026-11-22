@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Save, X } from "lucide-react"
 import { createMenu, setMenuActive, updateMenu } from "@/actions/menu"
+import { removeMenuImage, uploadMenuImage } from "@/actions/menu-image"
 import type { FormEvent } from "react"
 import { formatRupiah } from "@/lib/format"
+import { validateMenuImage } from "@/lib/menu-image"
 import { digitsOnly, formatAmountInput, parseAmountInput } from "@/lib/money"
 import { Badge, type BadgeTone } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -22,6 +24,7 @@ export interface MenuRow {
   price: number
   stock: number
   category?: string | null
+  imageUrl?: string | null
   active: boolean
 }
 
@@ -32,6 +35,7 @@ interface MenuManagerProps {
 interface FieldErrors {
   name?: string
   price?: string
+  image?: string
 }
 
 function stockTone(stock: number): BadgeTone {
@@ -54,6 +58,19 @@ export function MenuManager({ menus }: MenuManagerProps) {
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [removeImage, setRemoveImage] = useState(false)
+
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreview(null)
+      return
+    }
+    const url = URL.createObjectURL(imageFile)
+    setImagePreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [imageFile])
 
   function startEdit(menu: MenuRow) {
     setEditing(menu)
@@ -62,6 +79,8 @@ export function MenuManager({ menus }: MenuManagerProps) {
     setPrice(String(Math.round(menu.price)))
     setStock(String(menu.stock))
     setCategory(menu.category ?? "")
+    setImageFile(null)
+    setRemoveImage(false)
     setFieldErrors({})
     setError(null)
   }
@@ -73,6 +92,8 @@ export function MenuManager({ menus }: MenuManagerProps) {
     setPrice("0")
     setStock("0")
     setCategory("")
+    setImageFile(null)
+    setRemoveImage(false)
     setFieldErrors({})
     setError(null)
   }
@@ -93,9 +114,14 @@ export function MenuManager({ menus }: MenuManagerProps) {
       nextErrors.price = "Harga harus lebih dari 0."
     }
 
+    if (imageFile) {
+      const checked = validateMenuImage({ type: imageFile.type, size: imageFile.size, name: imageFile.name })
+      if (!checked.ok) nextErrors.image = checked.error
+    }
+
     if (nextErrors.name || nextErrors.price) {
       setFieldErrors(nextErrors)
-      document.getElementById(nextErrors.name ? "menu-name" : "menu-price")?.focus()
+      document.getElementById(nextErrors.name ? "menu-name" : nextErrors.price ? "menu-price" : "menu-image")?.focus()
       return
     }
 
@@ -112,15 +138,27 @@ export function MenuManager({ menus }: MenuManagerProps) {
           category: category.trim() || undefined,
           active: editing.active,
         })
+        if (imageFile) {
+          const form = new FormData()
+          form.set("image", imageFile)
+          await uploadMenuImage(editing.id, form)
+        } else if (removeImage && editing.imageUrl) {
+          await removeMenuImage(editing.id)
+        }
         toast.success("Menu diperbarui", name.trim())
       } else {
-        await createMenu({
+        const created = await createMenu({
           name: name.trim(),
           description: description.trim() || undefined,
           price: parsedPrice,
           stock: parsedStock,
           category: category.trim() || undefined,
         })
+        if (imageFile) {
+          const form = new FormData()
+          form.set("image", imageFile)
+          await uploadMenuImage(created.id, form)
+        }
         toast.success("Menu ditambahkan", name.trim())
       }
       resetForm()
@@ -235,6 +273,44 @@ export function MenuManager({ menus }: MenuManagerProps) {
             />
           </Field>
 
+          <Field
+            label="Foto menu"
+            htmlFor="menu-image"
+            error={fieldErrors.image}
+            hint="JPG, PNG, atau WebP · maksimal 2 MB"
+          >
+            <input
+              id="menu-image"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="block w-full text-xs text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-ember file:px-3 file:py-2 file:text-xs file:font-semibold file:text-[#f4f1e9] hover:file:bg-ember-strong"
+              onChange={(event) => {
+                setImageFile(event.target.files?.[0] ?? null)
+                setRemoveImage(false)
+                setFieldErrors((current) => ({ ...current, image: undefined }))
+              }}
+            />
+            {imagePreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={imagePreview} alt="Pratinjau foto menu" className="mt-2 h-20 w-28 rounded-lg object-cover" />
+            ) : editing?.imageUrl && !removeImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={editing.imageUrl} alt={`Foto ${editing.name}`} className="mt-2 h-20 w-28 rounded-lg object-cover" />
+            ) : null}
+            {editing?.imageUrl ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setRemoveImage((current) => !current)
+                  setImageFile(null)
+                }}
+                className="mt-2 text-[11px] font-bold text-danger underline-offset-4 hover:underline"
+              >
+                {removeImage ? "Batal hapus gambar" : "Hapus gambar"}
+              </button>
+            ) : null}
+          </Field>
+
           <Field label="Deskripsi" htmlFor="menu-description">
             <Input
               id="menu-description"
@@ -299,10 +375,18 @@ export function MenuManager({ menus }: MenuManagerProps) {
               {menus.map((menu) => (
                 <TR key={menu.id}>
                   <TD>
-                    <div className="font-semibold text-ink">{menu.name}</div>
-                    {menu.description ? (
-                      <div className="mt-0.5 text-[11px] text-muted">{menu.description}</div>
-                    ) : null}
+                    <div className="flex items-center gap-2.5">
+                      {menu.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={menu.imageUrl} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
+                      ) : null}
+                      <div className="min-w-0">
+                        <div className="font-semibold text-ink">{menu.name}</div>
+                        {menu.description ? (
+                          <div className="mt-0.5 text-[11px] text-muted">{menu.description}</div>
+                        ) : null}
+                      </div>
+                    </div>
                   </TD>
                   <TD>
                     <span className="text-xs text-muted">{menu.category ?? "Umum"}</span>

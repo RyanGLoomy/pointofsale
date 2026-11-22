@@ -105,6 +105,17 @@ Full verification after batch: build, tsc, lint, 162 unit tests, coverage 100% s
 
 Verifikasi: 162 unit tests, build/tsc/lint ok, **25/25 E2E** lulus setelah perubahan.
 
+## Menu photos (Vercel Blob)
+
+- Blob store `menu-images` (public, `iad1`) dibuat & terhubung ke project; `BLOB_READ_WRITE_TOKEN` terdaftar di Production/Preview/Development.
+- `Menu.imageUrl` ditambahkan via `prisma db push`.
+- RED: `src/lib/menu-image.test.ts` (module missing) → GREEN 6/6; `src/actions/action-guards.test.ts`扩展到 8/8 termasuk `uploadMenuImage` ditolak untuk KASIR/OWNER sebelum upload.
+- E2E `e2e/menu-image.spec.ts`: admin upload → thumbnail tampil di daftar menu & tile kasir; cleanup menghapus gambar. Blob Count kembali 0.
+- Audit: nested `zod@4.1.11` dari `@vercel/blob` di-override ke `4.6.7` — 0 vulnerabilities.
+- CSP `img-src` mengizinkan host Blob; `serverActions.bodySizeLimit` 4mb.
+
+Verifikasi: build, tsc, lint, 170 unit, coverage ≥80%, **26/26 E2E**, audit 0.
+
 ## Known gaps
 
 - Vercel SSO still blocks unauthenticated browser/smoke checks on preview; app-level verification was done locally and via authenticated user session.

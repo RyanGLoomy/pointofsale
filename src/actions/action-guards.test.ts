@@ -5,7 +5,11 @@ const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(),
   transaction: vi.fn(),
   menuCreate: vi.fn(),
+  menuFindUnique: vi.fn(),
+  menuUpdate: vi.fn(),
   userCreate: vi.fn(),
+  blobPut: vi.fn(),
+  blobDel: vi.fn(),
 }))
 
 vi.mock("next/navigation", () => ({
@@ -16,17 +20,25 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/auth", () => ({ auth: mocks.auth }))
 
+vi.mock("@vercel/blob", () => ({
+  put: mocks.blobPut,
+  del: mocks.blobDel,
+}))
+
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }))
+
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: { findUnique: mocks.findUnique, create: mocks.userCreate },
     $transaction: mocks.transaction,
-    menu: { create: mocks.menuCreate },
+    menu: { create: mocks.menuCreate, findUnique: mocks.menuFindUnique, update: mocks.menuUpdate },
   },
 }))
 
 import { checkoutPOS } from "./orders"
 import { createMenu } from "./menu"
 import { createAccount } from "./users"
+import { uploadMenuImage } from "./menu-image"
 
 function sessionAs(role: string) {
   mocks.auth.mockResolvedValue({ user: { id: "u1", role } })
@@ -63,6 +75,18 @@ describe("server action guards", () => {
         createMenu({ name: "Menu", price: 1000, stock: 1 }),
       ).rejects.toThrow("REDIRECT:/login")
       expect(mocks.menuCreate).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("uploadMenuImage requires menu:manage", () => {
+    it.each(["KASIR", "OWNER"])("rejects %s before uploading", async (role) => {
+      sessionAs(role)
+      const form = new FormData()
+      form.set("image", new File(["x"], "a.jpg", { type: "image/jpeg" }))
+
+      await expect(uploadMenuImage("m1", form)).rejects.toThrow("REDIRECT:/login")
+      expect(mocks.blobPut).not.toHaveBeenCalled()
+      expect(mocks.menuUpdate).not.toHaveBeenCalled()
     })
   })
 
