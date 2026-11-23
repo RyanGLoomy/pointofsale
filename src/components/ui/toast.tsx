@@ -126,7 +126,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div
               key={toast.id}
               role={tone === "error" ? "alert" : "status"}
-              className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border border-line bg-surface p-3 shadow-[0_30px_70px_-30px_rgba(0,0,0,0.95)]"
+              className="toast-enter pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border border-line bg-surface p-3 shadow-[0_30px_70px_-30px_rgba(0,0,0,0.95)]"
             >
               <span
                 className={cn(

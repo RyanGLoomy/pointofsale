@@ -205,6 +205,32 @@ Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **29/29 E2E (serial)**,
 
 Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **32/32 E2E (serial)**, audit 0.
 
+## Lively login & toast (Aceternity + 21st.dev motion)
+
+- Audit dengan skill `find-animation-opportunities` (gerbang frekuensi/tujuan/kecepatan/fungsi):
+  **4 peluang lolos** — aurora latar form (Delight, halaman login jarang), shine border kartu
+  (Delight), entrance blok form 80 ms stagger (Preventing a jarring change), dan entrance toast
+  (Preventing a jarring change, sesekali). **Ditolak**: animasi item navigasi/sidebar (100+/hari),
+  bar `SalesChart` (data yang sedang dibaca), toggle password & stepper (tens/hari), dan
+  hover tile kasir yang sudah ada (jangan diperlemah dengan spring).
+- Sumber: `AuroraBackground` dari Aceternity (Context7 + registry) diadaptasi jadi 3 layer
+  radial-gradient yang hanya menggerakkan `transform`/`opacity` (tanpa blur beranimasi);
+  `ShineBorder` dan pola stagger `Login Card` dari 21st.dev (Context7) diadaptasi CSS.
+- RED: `e2e/login-lively.spec.ts` gagal 4/4 (layer aurora/shine dan delay blok belum ada);
+  assertion `animationName: toast-in` di `e2e/pos.spec.ts` juga gagal. GREEN: 4/4 + toast lolos.
+- **CSP finding**: `style={{ animationDelay: "80ms" }}` tidak pernah terpakai karena CSP nonce
+  menolak atribut `style` inline (CSSOM kosong walaupun atribut ada). Delay dipindah ke class
+  `.login-enter--1/2/3` di stylesheet. Tidak ada pelonggaran CSP.
+- Semua layer dekoratif memakai `aria-hidden` + `pointer-events: none`. `prefers-reduced-motion`
+  menghentikan aurora/shine (durasi < 0,05 s) dan menolak delay 80/160/240 ms (form langsung
+  terlihat). Review: shine border awalnya menganimasi `background-position` (repaint) → diubah
+  ke `transform` pada `::after` mengikuti aturan composite-only.
+- Verifikasi visual: 1440×900 dan 390×844, saat animasi dan setelah selesai; cahaya hijau/krem
+  lembut mengisi sisi putih, teks dan input tetap jelas.
+
+Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **36/36 E2E (serial)**, audit 0,
+dependency-analyzer 0 outdated/0 vulnerable/0 unused.
+
 ## Known gaps
 
 - Vercel SSO still blocks unauthenticated browser/smoke checks on preview; app-level verification was done locally and via authenticated user session.

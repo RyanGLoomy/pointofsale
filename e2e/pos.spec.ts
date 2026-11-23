@@ -142,6 +142,7 @@ test.describe("Kasir POS flow", () => {
 
     const toast = page.getByRole("status").filter({ hasText: "Item dihapus" })
     await expect(toast).toBeVisible()
+    expect(await toast.evaluate((el) => getComputedStyle(el).animationName)).toContain("toast-in")
     await toast.getByRole("button", { name: "Urungkan" }).click()
 
     await expect(page.getByRole("listitem").filter({ hasText: "Kopi Suroko" })).toContainText("× 1")

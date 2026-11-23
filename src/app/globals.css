@@ -40,6 +40,99 @@
   mask-image: radial-gradient(ellipse at 25% 15%, black 0%, transparent 70%);
 }
 
+/* Adaptasi Aceternity UI — "Aurora Background". Radial gradient menggantikan
+   filter blur agar layer tetap murah; hanya transform/opacity yang bergerak. */
+.aurora-blob {
+  position: absolute;
+  display: block;
+  width: 85%;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+}
+.aurora-blob--one {
+  top: -32%;
+  left: -22%;
+  background: radial-gradient(circle, rgba(31, 93, 72, 0.18) 0%, rgba(31, 93, 72, 0) 70%);
+  animation: login-aurora-one 9s ease-in-out infinite alternate;
+}
+.aurora-blob--two {
+  bottom: -38%;
+  right: -28%;
+  background: radial-gradient(circle, rgba(232, 220, 195, 0.6) 0%, rgba(232, 220, 195, 0) 70%);
+  animation: login-aurora-two 11s ease-in-out infinite alternate;
+}
+.aurora-blob--three {
+  top: 18%;
+  right: -32%;
+  background: radial-gradient(circle, rgba(180, 138, 78, 0.16) 0%, rgba(180, 138, 78, 0) 70%);
+  animation: login-aurora-three 13s ease-in-out infinite alternate;
+}
+
+@keyframes login-aurora-one {
+  from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.6; }
+  to { transform: translate3d(14%, 10%, 0) scale(1.12); opacity: 1; }
+}
+@keyframes login-aurora-two {
+  from { transform: translate3d(0, 0, 0) scale(1.05); opacity: 0.8; }
+  to { transform: translate3d(-12%, -14%, 0) scale(1); opacity: 1; }
+}
+@keyframes login-aurora-three {
+  from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.5; }
+  to { transform: translate3d(-10%, 12%, 0) scale(1.1); opacity: 0.9; }
+}
+
+/* Adaptasi 21st.dev — "Shine Border": kilau tipis di pinggir kartu.
+   Ring-nya statis; hanya pseudo-element yang bergerak memakai transform. */
+.login-shine {
+  padding: 1px;
+  border-radius: inherit;
+  background: rgba(232, 220, 195, 0.12);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+.login-shine::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(
+    110deg,
+    transparent 35%,
+    rgba(232, 220, 195, 0.85) 48%,
+    rgba(255, 255, 255, 0.95) 50%,
+    rgba(232, 220, 195, 0.85) 52%,
+    transparent 65%
+  );
+  animation: login-shine 7s linear infinite;
+}
+@keyframes login-shine {
+  from { transform: translate3d(100%, 0, 0); }
+  to { transform: translate3d(-100%, 0, 0); }
+}
+
+/* Adaptasi 21st.dev — "Login Card": blok form masuk bertahap. */
+.login-enter {
+  animation: login-form-in 400ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+/* Delay lewat class, bukan inline style: CSP nonce menolak style attribute. */
+.login-enter--1 { animation-delay: 80ms; }
+.login-enter--2 { animation-delay: 160ms; }
+.login-enter--3 { animation-delay: 240ms; }
+@keyframes login-form-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Toast muncul halus saat aksi selesai; frekuensi sesekali, bukan 100+/hari. */
+.toast-enter {
+  animation: toast-in 220ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
 :root {
   --bg: #f4f1e9;
   --surface: #fcfaf5;
@@ -110,6 +203,14 @@ input[type="number"] {
   [data-text-generate] span {
     opacity: 1 !important;
     filter: none !important;
+  }
+
+  /* Jangan sembunyikan blok form sampai delay-nya lewat saat gerakan dimatikan. */
+  .login-enter,
+  .login-enter--1,
+  .login-enter--2,
+  .login-enter--3 {
+    animation-delay: 0ms !important;
   }
 }
 

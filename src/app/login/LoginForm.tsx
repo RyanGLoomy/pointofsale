@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/ui/password-input"
 import { TextGenerateEffect } from "@/components/aceternity/text-generate-effect"
+import { AuroraBackground } from "@/components/aceternity/aurora-background"
+import { ShineBorder } from "@/components/twentyfirst/shine-border"
 
 const roles = [
   {
@@ -106,7 +108,8 @@ export function LoginForm() {
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,rgba(31,93,72,0.10),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(232,220,195,0.55),transparent_60%)]"
       />
 
-      <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_50px_120px_-50px_rgba(0,0,0,0.45)] lg:grid-cols-[1.05fr_1fr]">
+      <div className="relative grid w-full max-w-5xl overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_50px_120px_-50px_rgba(0,0,0,0.45)] lg:grid-cols-[1.05fr_1fr]">
+        <ShineBorder />
         <section
           data-testid="login-brand-panel"
           className="relative hidden flex-col justify-between gap-8 overflow-hidden bg-ember p-10 lg:flex"
@@ -160,8 +163,11 @@ export function LoginForm() {
           </div>
         </section>
 
-        <section className="flex flex-col justify-center p-6 sm:p-10">
-          <div className="relative flex items-center gap-2.5 lg:hidden">
+        <AuroraBackground className="flex flex-col justify-center p-6 sm:p-10">
+          <div
+            data-login-enter
+            className="login-enter relative flex items-center gap-2.5 lg:hidden"
+          >
             <div
               aria-hidden="true"
               data-testid="login-spotlight-mobile"
@@ -174,14 +180,19 @@ export function LoginForm() {
             </span>
           </div>
 
-          <div className="mt-8 lg:mt-0">
+          <div data-login-enter className="login-enter login-enter--1 mt-8 lg:mt-0">
             <h1 className="text-2xl font-extrabold tracking-tight text-ink">Masuk</h1>
             <p className="mt-1.5 text-sm text-muted">
               Gunakan akun kasir, admin, atau owner dari pengelola gerobak.
             </p>
           </div>
 
-          <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
+          <form
+            data-login-enter
+            onSubmit={onSubmit}
+            className="login-enter login-enter--2 mt-6 space-y-4"
+            noValidate
+          >
             <Field label="Email" htmlFor="email" error={fieldErrors.email}>
               <Input
                 ref={emailRef}
@@ -242,8 +253,10 @@ export function LoginForm() {
             </Button>
           </form>
 
-          <p className="mt-6 text-xs text-muted">Lupa kata sandi? Hubungi pengelola gerobak.</p>
-        </section>
+          <p data-login-enter className="login-enter login-enter--3 mt-6 text-xs text-muted">
+            Lupa kata sandi? Hubungi pengelola gerobak.
+          </p>
+        </AuroraBackground>
       </div>
     </main>
   )
