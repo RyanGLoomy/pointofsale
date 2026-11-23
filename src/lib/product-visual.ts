@@ -1,21 +1,36 @@
+// Muted earth tones that sit inside the warm Pasar palette. Dark enough for
+// the cream product initial drawn on top of the gradient.
 const palettes = [
-  ["#f97316", "#9a3412"],
-  ["#14b8a6", "#0f766e"],
-  ["#6366f1", "#3730a3"],
-  ["#ec4899", "#831843"],
-  ["#eab308", "#713f12"],
-  ["#22c55e", "#14532d"],
-  ["#06b6d4", "#155e75"],
-  ["#a855f7", "#581c87"],
+  ["#a6533a", "#74392a"], // terracotta
+  ["#5c7049", "#3c4b30"], // olive
+  ["#9c6b48", "#6e482f"], // clay
+  ["#2f6b53", "#1d4736"], // pine
+  ["#a38342", "#755c28"], // ochre
+  ["#7a4f5a", "#54343d"], // plum
+  ["#3e6a6a", "#274646"], // teal
+  ["#5b4a6b", "#3b2f49"], // aubergine
 ] as const
 
-export function productGradient(seed: string): string {
+/** All tone gradients, injected once via a nonced <style> tag in the layout. */
+export const PRODUCT_TONE_GRADIENTS: readonly string[] = palettes.map(
+  ([from, to]) => `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+)
+
+function productTone(seed: string): number {
   let hash = 0
   for (let index = 0; index < seed.length; index += 1) {
     hash = (hash * 31 + seed.charCodeAt(index)) >>> 0
   }
-  const [from, to] = palettes[hash % palettes.length]
-  return `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
+  return hash % PRODUCT_TONE_GRADIENTS.length
+}
+
+/** Stable CSS class instead of an inline style, so strict CSP still applies. */
+export function productToneClass(seed: string): string {
+  return `product-tone-${productTone(seed)}`
+}
+
+export function productGradient(seed: string): string {
+  return PRODUCT_TONE_GRADIENTS[productTone(seed)]
 }
 
 export function productInitial(name: string): string {

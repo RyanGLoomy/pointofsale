@@ -20,7 +20,7 @@ export function TBody({ children }: { children: ReactNode }) {
 }
 
 export function TR({ children, className }: { children: ReactNode; className?: string }) {
-  return <tr className={cn("border-t border-line/80 transition-colors hover:bg-white/[0.02]", className)}>{children}</tr>
+  return <tr className={cn("border-t border-line/80 transition-colors hover:bg-ink/5", className)}>{children}</tr>
 }
 
 export function TH({ children, className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {

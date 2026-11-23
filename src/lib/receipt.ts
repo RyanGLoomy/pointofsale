@@ -27,7 +27,7 @@ export interface ReceiptData {
 }
 
 export const STORE_PROFILE = {
-  name: process.env.NEXT_PUBLIC_STORE_NAME ?? "Point of Sale",
+  name: process.env.NEXT_PUBLIC_STORE_NAME ?? "RM Gerobak Hayam Taman Sari",
   address: process.env.NEXT_PUBLIC_STORE_ADDRESS ?? "",
   phone: process.env.NEXT_PUBLIC_STORE_PHONE ?? "",
 }

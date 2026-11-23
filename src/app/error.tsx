@@ -29,14 +29,14 @@ export default function GlobalError({
           <button
             type="button"
             onClick={reset}
-            className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-ember px-4 text-sm font-semibold text-[#180a02] transition-colors hover:bg-ember-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+            className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-ember px-4 text-sm font-semibold text-[#f4f1e9] transition-colors hover:bg-ember-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           >
             <RotateCcw className="h-4 w-4" aria-hidden="true" />
             Coba lagi
           </button>
           <Link
-            href="/kasir"
-            className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-line bg-surface-2 px-4 text-sm font-semibold text-ink transition-colors hover:border-white/20 hover:bg-[#1d222b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember/60"
+            href="/"
+            className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-line bg-surface-2 px-4 text-sm font-semibold text-ink transition-colors hover:border-ink/25 hover:bg-ink/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember/60"
           >
             Ke kasir
           </Link>

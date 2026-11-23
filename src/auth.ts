@@ -4,8 +4,14 @@ import type { JWT } from "next-auth/jwt"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { clearFailedLogins, getLockState, registerFailedLogin } from "@/lib/lockout-store"
+
+const DUMMY_HASH = bcrypt.hashSync("timing-equalization-dummy-password", 10)
 
 export const authOptions = {
+  // Trust the host forwarded by the reverse proxy (Vercel) instead of a
+  // hardcoded AUTH_URL, so sign-out redirects stay on the current origin.
+  trustHost: true,
   providers: [
     Credentials({
       name: "Credentials",
@@ -18,19 +24,27 @@ export const authOptions = {
         _request: Request,
       ) {
         void _request
-        const email = credentials?.email as string | undefined
-        const password = credentials?.password as string | undefined
+        const email = typeof credentials?.email === "string" ? credentials.email.trim().toLowerCase() : ""
+        const password = typeof credentials?.password === "string" ? credentials.password : ""
 
         if (!email || !password) return null
+
+        if ((await getLockState(email)).locked) return null
 
         const user = await prisma.user.findUnique({
           where: { email },
         })
 
-        if (!user || !user.active) return null
+        const passwordMatches = user
+          ? await bcrypt.compare(password, user.password)
+          : await bcrypt.compare(password, DUMMY_HASH)
 
-        const passwordMatches = await bcrypt.compare(password, user.password)
-        if (!passwordMatches) return null
+        if (!user || !user.active || !passwordMatches) {
+          await registerFailedLogin(email)
+          return null
+        }
+
+        await clearFailedLogins(email)
 
         return {
           id: user.id,

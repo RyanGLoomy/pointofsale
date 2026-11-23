@@ -59,3 +59,20 @@ No `*.plan.md` file was used. Scope was agreed as a four-phase polish plan: (1) 
 - Toast/confirm/modal primitives have no isolated unit tests (no DOM test environment). They are covered indirectly by the E2E flows above.
 - Receipt printing relies on the browser print dialog; no print CSS assertions in E2E.
 - Cart persistence is `localStorage`-only, so it does not sync across devices or browsers.
+
+## Production verification
+
+**Environment:** `https://pointofsale-kasir.vercel.app` (Vercel), deploy of `b5dde97` plus the follow-up font fix `9f651d3`.
+
+| Check | Command / method | Result |
+|-------|------------------|--------|
+| Signed-out guards | Playwright against production (`/`, `/kasir` → `/login`) | PASS |
+| Login UI | new sign-in copy, title template, password reveal, per-field validation | PASS |
+| Authenticated shells | admin login; `/admin`, `/admin/menus`, `/admin/transactions`, `/kasir` render | PASS |
+| Sidebar labels | desktop nav shows Kasir, Admin, Kelola Menu, Transaksi, Laporan, Keluar | PASS |
+| Custom 404 | unknown route renders `Halaman tidak ditemukan` | PASS |
+| Webfont | `document.fonts` reports Plus Jakarta Sans 400/600/700/800 loaded, no failed requests | PASS |
+
+### Follow-up fix: `9f651d3`
+
+`next.config.ts` set `experimental.inlineCss: true` (commit `8312178`), which inlined `next/font`'s `@font-face` rules into the HTML. The relative `../media/*.woff2` URLs then resolved against the page instead of the stylesheet, so the webfont 404'd and the app fell back to system fonts. `inlineCss` was disabled; the stylesheet is emitted as `/_next/static/chunks/*.css` and the font loads with zero failed requests. This was a pre-existing defect, not a regression from this pass.

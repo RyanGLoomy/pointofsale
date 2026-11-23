@@ -2,8 +2,9 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { getSession, signIn } from "next-auth/react"
-import { ArrowRight, BarChart3, LockKeyhole, ShieldCheck, ShoppingCart, Store } from "lucide-react"
+import { signIn } from "next-auth/react"
+import { getLoginLockState } from "@/actions/auth"
+import { ArrowRight, BarChart3, LockKeyhole, ShieldCheck, ShoppingCart } from "lucide-react"
 import type { FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
@@ -34,7 +35,35 @@ interface FieldErrors {
   password?: string
 }
 
-export function LoginForm() {
+interface LoginFormProps {
+  photos: string[]
+}
+
+/** Strip foto menu asli supaya halaman login terasa hidup, bukan kosong. */
+function MenuShowcase({ photos }: { photos: string[] }) {
+  if (photos.length === 0) return null
+
+  return (
+    <ul
+      aria-hidden="true"
+      data-testid="login-showcase"
+      className="relative z-10 mt-5 grid grid-cols-4 gap-2 sm:gap-3 lg:mt-8"
+    >
+      {photos.map((src, index) => (
+        <li
+          key={src}
+          className="aspect-square animate-login-float overflow-hidden rounded-xl shadow-[0_18px_40px_-24px_rgba(0,0,0,0.8)] ring-1 ring-white/25 lg:aspect-[4/3]"
+          style={{ animationDelay: `${index * 0.7}s` }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt="" className="h-full w-full object-cover" />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export function LoginForm({ photos }: LoginFormProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
@@ -79,72 +108,78 @@ export function LoginForm() {
 
     if (result?.error) {
       setPending(false)
-      setError("Email atau password salah.")
+      const lock = await getLoginLockState(email.trim())
+      if (lock.locked) {
+        const minutes = Math.max(1, Math.ceil(lock.remainingSeconds / 60))
+        setError(`Akun terkunci setelah 5 kali gagal. Coba lagi dalam ${minutes} menit.`)
+      } else {
+        setError("Email atau password salah.")
+      }
       passwordRef.current?.focus()
       passwordRef.current?.select()
       return
     }
 
-    const session = await getSession()
-    const role = session?.user?.role
-
     setPending(false)
-    router.replace(role === "ADMIN" ? "/admin" : role === "OWNER" ? "/owner" : "/kasir")
-    router.refresh()
+    // "/" already redirects by role from the JWT, so no extra getSession()
+    // round trip and no duplicate router.refresh() are needed here.
+    router.replace("/")
   }
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_50px_120px_-50px_rgba(0,0,0,0.95)] lg:grid-cols-[1.05fr_1fr]">
-        <section className="relative hidden flex-col justify-between overflow-hidden bg-[#0d1016] p-10 lg:flex">
-          <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-ember/20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -left-20 h-64 w-64 rounded-full bg-info/10 blur-3xl" />
+      <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_50px_120px_-50px_rgba(0,0,0,0.45)] lg:grid-cols-[1.05fr_1fr]">
+        <section className="relative flex flex-col overflow-hidden bg-ember p-6 sm:p-8 lg:p-10">
+          <div
+            aria-hidden="true"
+            data-testid="login-spotlight-desktop"
+            className="pointer-events-none absolute -left-28 -top-28 hidden h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(232,220,195,0.42)_0%,rgba(232,220,195,0)_68%)] lg:block animate-login-spotlight"
+          />
+          <div
+            aria-hidden="true"
+            data-testid="login-spotlight-mobile"
+            className="pointer-events-none absolute -left-6 -top-8 h-36 w-36 rounded-full bg-[radial-gradient(circle,rgba(232,220,195,0.30)_0%,rgba(232,220,195,0)_70%)] lg:hidden animate-login-spotlight"
+          />
 
-          <div className="relative">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-ember text-[#180a02]">
-                <Store className="h-5 w-5" />
-              </span>
-              <span className="text-sm font-bold tracking-tight text-ink">Point of Sale</span>
-            </div>
-
-            <h2 className="mt-10 max-w-sm text-4xl font-extrabold leading-[1.1] tracking-tight text-ink">
-              Kasir yang rapi. <span className="text-ember">Laporan yang jelas.</span>
-            </h2>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
-              Satu tempat untuk pesanan, stok, dan performa toko.
-            </p>
-
-            <ul className="mt-8 space-y-4">
-              {highlights.map((item) => {
-                const Icon = item.icon
-                return (
-                  <li key={item.title} className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-surface-2 text-ember">
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold text-ink">{item.title}</p>
-                      <p className="text-xs text-muted">{item.description}</p>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
+          <div className="relative z-10 flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="" width={237} height={320} className="h-10 w-auto object-contain lg:h-12" />
+            <span className="text-sm font-bold leading-tight tracking-tight text-[#f4f1e9]">
+              RM Gerobak Hayam Taman Sari
+            </span>
           </div>
 
-          <p className="relative text-[11px] text-muted">Sistem point of sale internal.</p>
+          <h2 className="relative z-10 mt-6 max-w-sm font-serif leading-[1.1] tracking-tight text-[#f4f1e9] lg:mt-10 lg:text-4xl">
+            Kasir yang rapi. <span className="text-[#e8dcc3]">Laporan yang jelas.</span>
+          </h2>
+          <p className="relative z-10 mt-3 max-w-sm text-sm leading-relaxed text-[#d8d0bf] lg:mt-4">
+            Satu tempat untuk pesanan, stok, dan performa toko.
+          </p>
+
+          <ul className="relative z-10 mt-5 hidden space-y-3 lg:block">
+            {highlights.map((item) => {
+              const Icon = item.icon
+              return (
+                <li key={item.title} className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-[#f4f1e9]">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-[#f4f1e9]">{item.title}</p>
+                    <p className="text-xs text-[#d8d0bf]">{item.description}</p>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+
+          <MenuShowcase photos={photos} />
+
+          <p className="relative z-10 mt-5 text-[11px] text-[#c9c0ae] lg:mt-6">Sistem kasir internal.</p>
         </section>
 
         <section className="p-6 sm:p-10">
-          <div className="flex items-center gap-2.5 lg:hidden">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ember text-[#180a02]">
-              <Store className="h-4 w-4" />
-            </span>
-            <span className="text-sm font-bold tracking-tight text-ink">Point of Sale</span>
-          </div>
-
-          <div className="mt-8 lg:mt-0">
+          <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-ember">Selamat datang</p>
             <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-ink">Masuk ke POS</h1>
             <p className="mt-1.5 text-sm text-muted">

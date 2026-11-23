@@ -1,17 +1,17 @@
 import { prisma } from "@/lib/prisma"
 import { PosTerminal } from "@/components/PosTerminal"
-import { AppShell } from "@/components/shell/AppShell"
 import { PageHeader } from "@/components/shell/PageHeader"
 import { Badge } from "@/components/ui/badge"
-import { requireUser } from "@/lib/session"
+import { requirePermission } from "@/lib/session"
 
 export const metadata = { title: "Kasir" }
 
 export default async function KasirPage() {
-  const user = await requireUser(["KASIR", "ADMIN", "OWNER"])
+  const user = await requirePermission("transactions:create")
 
   const menus = await prisma.menu.findMany({
     where: { active: true },
+    select: { id: true, name: true, price: true, stock: true, category: true, imageUrl: true },
     orderBy: { name: "asc" },
   })
 
@@ -21,18 +21,19 @@ export default async function KasirPage() {
     price: Number(menu.price),
     stock: menu.stock,
     category: menu.category,
+    imageUrl: menu.imageUrl,
   }))
 
   return (
-    <AppShell user={user}>
+    <>
       <PageHeader
         eyebrow="Terminal"
         title="Kasir"
         description="Pilih menu, susun pesanan, lalu proses pembayaran."
         actions={<Badge tone="success">Shift aktif</Badge>}
       />
-      <PosTerminal items={items} userId={user.id} cashierName={user.name} />
-    </AppShell>
+      <PosTerminal items={items} cashierName={user.name} />
+    </>
   )
 }
 

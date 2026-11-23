@@ -53,16 +53,16 @@ describe("extractItemQuantities", () => {
 })
 
 describe("buildDailyTotals", () => {
-  it("groups totals by UTC day and sorts ascending", () => {
+  it("groups totals by Asia/Jakarta day and sorts ascending", () => {
     const result = buildDailyTotals([
       { total: 10000, createdAt: "2026-11-19T10:00:00Z", items: null },
       { total: 5000, createdAt: "2026-11-18T22:00:00Z", items: null },
-      { total: "2500", createdAt: "2026-11-19T01:00:00Z", items: null },
+      { total: "2500", createdAt: "2026-11-17T22:00:00Z", items: null },
     ])
 
     expect(result).toEqual([
-      { day: "2026-11-18", total: 5000 },
-      { day: "2026-11-19", total: 12500 },
+      { day: "2026-11-18", total: 2500 },
+      { day: "2026-11-19", total: 15000 },
     ])
   })
 
@@ -109,6 +109,16 @@ describe("fillDailySeries", () => {
 
     expect(result.map((entry) => entry.day)).toEqual(["2026-10-31", "2026-11-01"])
     expect(result[0].total).toBe(1000)
+  })
+
+  it("anchors the series on the Asia/Jakarta day of the reference time", () => {
+    const result = fillDailySeries([{ day: "2026-11-20", total: 7000 }], {
+      days: 2,
+      reference: new Date("2026-11-20T10:00:00Z"),
+    })
+
+    expect(result.map((entry) => entry.day)).toEqual(["2026-11-19", "2026-11-20"])
+    expect(result[1]?.total).toBe(7000)
   })
 
   it("defaults to a 14 day window", () => {

@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 import { checkoutPOS } from "@/actions/orders"
 import { cn, formatRupiah } from "@/lib/format"
-import { productGradient, productInitial } from "@/lib/product-visual"
+import { productInitial, productToneClass } from "@/lib/product-visual"
 import {
   addLine,
   CART_STORAGE_KEY,
@@ -62,6 +62,7 @@ export interface PosItem {
   price: number
   stock: number
   category?: string | null
+  imageUrl?: string | null
 }
 
 const paymentOptions: SegmentedOption<PaymentMethod>[] = [
@@ -95,11 +96,9 @@ function readStoredCart(items: PosItem[]): CartLine[] {
 
 export function PosTerminal({
   items,
-  userId,
   cashierName,
 }: {
   items: PosItem[]
-  userId: string
   cashierName: string
 }) {
   const router = useRouter()
@@ -286,7 +285,6 @@ export function PosTerminal({
 
     try {
       const result = await checkoutPOS({
-        userId,
         items: snapshot.map((line) => ({ menuId: line.menuId, quantity: line.quantity })),
         paymentMethod,
       })
@@ -365,7 +363,7 @@ export function PosTerminal({
                     setQuery("")
                     searchRef.current?.focus()
                   }}
-                  className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition-colors hover:bg-white/5 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember/60"
+                  className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition-colors hover:bg-ink/5 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember/60"
                 >
                   <X className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
@@ -389,7 +387,7 @@ export function PosTerminal({
                   className={cn(
                     "shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
                     category === entry
-                      ? "border-ember/40 bg-ember/10 text-ember"
+                      ? "border-ember/40 bg-ember text-[#f4f1e9]"
                       : "border-line bg-surface-2 text-muted hover:text-ink",
                   )}
                 >
@@ -414,21 +412,27 @@ export function PosTerminal({
                   onClick={() => addToCart(item)}
                   disabled={item.stock <= 0}
                   aria-label={`Tambah ${item.name} ke keranjang`}
-                  className="group flex flex-col rounded-2xl border border-line bg-surface-2/40 p-2.5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-ember/50 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+                  className="group flex flex-col rounded-2xl border border-line bg-surface p-2.5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-ember/50 hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
                 >
                   <div
-                    className="relative aspect-[4/3] w-full overflow-hidden rounded-xl"
-                    style={{ backgroundImage: productGradient(item.name) }}
+                    className={cn("relative aspect-[4/3] w-full overflow-hidden rounded-xl", productToneClass(item.name))}
                   >
-                    <span className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.35),transparent_55%)]" />
-                    <span className="absolute bottom-1.5 left-3 text-4xl font-extrabold leading-none text-white/90">
-                      {productInitial(item.name)}
-                    </span>
-                    <span className="absolute right-2 top-2 rounded-full bg-black/30 p-1.5 text-white/80 backdrop-blur-sm">
+                    {item.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.imageUrl} alt={item.name} className="absolute inset-0 h-full w-full object-cover" />
+                    ) : (
+                      <>
+                        <span className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.35),transparent_55%)]" />
+                        <span className="absolute bottom-1.5 left-3 text-4xl font-serif font-bold leading-none text-[#f4f1e9]">
+                          {productInitial(item.name)}
+                        </span>
+                      </>
+                    )}
+                    <span className="absolute right-2 top-2 rounded-full bg-ink/45 p-1.5 text-[#f4f1e9] backdrop-blur-sm">
                       <CategoryIcon category={item.category} />
                     </span>
                     {item.stock <= 0 ? (
-                      <span className="absolute inset-0 flex items-center justify-center bg-black/65 text-[11px] font-bold uppercase tracking-[0.16em] text-white">
+                      <span className="absolute inset-0 flex items-center justify-center bg-ink/70 text-[11px] font-bold uppercase tracking-[0.16em] text-[#f4f1e9]">
                         Habis
                       </span>
                     ) : null}
@@ -485,8 +489,7 @@ export function PosTerminal({
                       className="flex gap-3 rounded-xl border border-line bg-surface-2 p-2.5"
                     >
                       <div
-                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-sm font-extrabold text-white/90"
-                        style={{ backgroundImage: productGradient(line.name) }}
+                        className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-sm font-serif font-extrabold text-[#f4f1e9]", productToneClass(line.name))}
                       >
                         {productInitial(line.name)}
                       </div>
@@ -525,7 +528,7 @@ export function PosTerminal({
               </div>
               <div className="mt-1.5 flex items-center justify-between">
                 <span className="text-sm font-semibold text-ink">Total</span>
-                <span className="text-lg font-extrabold tabular-nums text-ember">{formatRupiah(total)}</span>
+                <span className="text-lg font-serif font-bold tabular-nums text-ember">{formatRupiah(total)}</span>
               </div>
 
               <Segmented

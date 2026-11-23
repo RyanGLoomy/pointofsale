@@ -3,6 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
+import { CART_STORAGE_KEY } from "@/lib/cart"
+import { hasPermission, type Permission } from "@/lib/permissions"
 import type { LucideIcon } from "lucide-react"
 import {
   BarChart3,
@@ -11,7 +13,7 @@ import {
   LogOut,
   ReceiptText,
   ShoppingCart,
-  Store,
+  Users,
   UtensilsCrossed,
 } from "lucide-react"
 import { cn } from "@/lib/format"
@@ -22,8 +24,10 @@ interface NavItem {
   label: string
   shortLabel: string
   icon: LucideIcon
-  roles: string[]
+  permission?: Permission
+  roles?: string[]
   exact?: boolean
+  prefetch?: boolean
 }
 
 const navItems: NavItem[] = [
@@ -32,36 +36,46 @@ const navItems: NavItem[] = [
     label: "Kasir",
     shortLabel: "Kasir",
     icon: ShoppingCart,
-    roles: ["KASIR", "ADMIN", "OWNER"],
+    permission: "transactions:create",
+    prefetch: true,
   },
   {
     href: "/admin",
     label: "Admin",
     shortLabel: "Admin",
     icon: LayoutDashboard,
-    roles: ["ADMIN", "OWNER"],
+    permission: "users:manage",
     exact: true,
+  },
+  {
+    href: "/admin/accounts",
+    label: "Kelola Akun",
+    shortLabel: "Akun",
+    icon: Users,
+    permission: "users:manage",
   },
   {
     href: "/admin/menus",
     label: "Kelola Menu",
     shortLabel: "Menu",
     icon: UtensilsCrossed,
-    roles: ["ADMIN", "OWNER"],
+    permission: "menu:manage",
   },
   {
     href: "/admin/transactions",
     label: "Transaksi",
     shortLabel: "Riwayat",
     icon: ReceiptText,
-    roles: ["ADMIN", "OWNER"],
+    permission: "transactions:read",
+    prefetch: true,
   },
   {
     href: "/admin/reports",
     label: "Laporan",
     shortLabel: "Laporan",
     icon: BarChart3,
-    roles: ["ADMIN", "OWNER"],
+    permission: "reports:read",
+    prefetch: true,
   },
   { href: "/owner", label: "Owner", shortLabel: "Owner", icon: Crown, roles: ["OWNER"] },
 ]
@@ -81,7 +95,11 @@ function initials(name: string): string {
 export function Sidebar({ role, name, email }: { role: string; name: string; email: string }) {
   const pathname = usePathname()
   const confirm = useConfirm()
-  const visibleItems = navItems.filter((item) => item.roles.includes(role))
+  const visibleItems = navItems.filter((item) => {
+    const allowedByPermission = item.permission ? hasPermission(role, item.permission) : true
+    const allowedByRole = item.roles ? item.roles.includes(role) : true
+    return allowedByPermission && allowedByRole
+  })
 
   async function handleSignOut() {
     const confirmed = await confirm({
@@ -92,6 +110,8 @@ export function Sidebar({ role, name, email }: { role: string; name: string; ema
     })
 
     if (confirmed) {
+      // Never carry one cashier's in-progress cart into the next session.
+      window.localStorage.removeItem(CART_STORAGE_KEY)
       await signOut({ redirectTo: "/login" })
     }
   }
@@ -104,15 +124,18 @@ export function Sidebar({ role, name, email }: { role: string; name: string; ema
       <div className="hidden items-center gap-2.5 px-4 pb-1 pt-5 md:flex">
         <Link
           href="/kasir"
-          aria-label="Point of Sale"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ember text-[#180a02] shadow-[0_18px_38px_-18px_rgba(255,122,26,1)]"
+          aria-label="RM Gerobak Hayam Taman Sari"
+          className="shrink-0"
         >
-          <Store className="h-5 w-5" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="" width={237} height={320} className="h-11 w-auto object-contain" />
         </Link>
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold tracking-tight text-ink">Point of Sale</p>
+          <p className="truncate text-[13px] font-bold leading-tight tracking-tight text-ink">
+            RM Gerobak Hayam
+          </p>
           <p className="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
-            Terminal kasir
+            Taman Sari
           </p>
         </div>
       </div>
@@ -127,13 +150,14 @@ export function Sidebar({ role, name, email }: { role: string; name: string; ema
             <li key={item.href} className="min-w-0 flex-1 md:flex-none">
               <Link
                 href={item.href}
+                prefetch={item.prefetch}
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "relative flex h-14 w-full flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-semibold transition-colors md:h-10 md:flex-row md:justify-start md:gap-2.5 md:px-3 md:text-sm",
                   active
                     ? "bg-ember-soft text-ember"
-                    : "text-muted hover:bg-white/5 hover:text-ink",
+                    : "text-muted hover:bg-ink/5 hover:text-ink",
                 )}
               >
                 {active ? (

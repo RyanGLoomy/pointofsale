@@ -4,7 +4,7 @@ import { cn } from "@/lib/format"
 export type BadgeTone = "neutral" | "ember" | "success" | "danger" | "warning" | "info"
 
 const toneClasses: Record<BadgeTone, string> = {
-  neutral: "border-line bg-white/5 text-muted",
+  neutral: "border-line bg-ink/5 text-muted",
   ember: "border-ember/30 bg-ember/10 text-ember",
   success: "border-success/30 bg-success/10 text-success",
   danger: "border-danger/30 bg-danger/10 text-danger",
