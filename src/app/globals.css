@@ -18,6 +18,7 @@
   --font-serif: var(--font-serif);
   --font-mono: var(--font-mono);
   --animate-login-spotlight: login-spotlight 1.8s ease-out 0.2s 1 forwards;
+  --animate-login-float: login-float 6s ease-in-out infinite;
 }
 
 @keyframes login-spotlight {
@@ -28,6 +29,16 @@
   100% {
     opacity: 1;
     transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes login-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
   }
 }
 

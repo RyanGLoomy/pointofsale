@@ -177,6 +177,27 @@ Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **27/27 E2E (serial)**,
 
 Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **29/29 E2E (serial)**, audit 0.
 
+## Login showcase (foto menu di panel brand)
+
+- Permintaan: halaman login terasa kosong + menu "Es Teh Manis" belum punya foto.
+- Foto "Es Teh Manis": `File:NCI_iced_tea.jpg` (Wikimedia Commons, public domain, Renee
+  Comet/NCI), 960×1646 JPEG (226.842 byte), diunggah ke Blob store `menu-images` dan
+  `Menu.imageUrl` diisi. Isi Blob store = 4 blob, tanpa orphan.
+- Panel brand di `src/app/login/LoginForm.tsx` dirapikan jadi satu blok (desktop +
+  mobile) berisi logo, headline, highlights, dan strip 4 foto menu asli; halaman login
+  `src/app/login/page.tsx` mengambil 4 menu aktif yang punya `imageUrl` (urut nama).
+  Foto dekoratif (`aria-hidden`, `alt=""`), jadi tidak menambah beban untuk pembaca layar.
+- Gerak: token CSS `--animate-login-float` (6 s, easing in-out, 6 px, stagger 0,7 s per
+  foto). Tanpa dependency baru; `prefers-reduced-motion` yang sudah ada mematikan semua
+  animasi (termasuk spotlight).
+- RED: `e2e/login-showcase.spec.ts` gagal — `login-showcase` belum ada (2 test gagal).
+- GREEN: 2/2 E2E lolos — ≥3 foto dari host Blob termuat (`naturalWidth > 0`) dan panel
+  brand tetap tampil di layar 390×844.
+- Visual dicek di 1440×900, 1280×720, dan 390×844; panel brand terisi, form login tetap
+  utuh, tidak ada teks tertutup.
+
+Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **31/31 E2E (serial)**, audit 0.
+
 ## Known gaps
 
 - Vercel SSO still blocks unauthenticated browser/smoke checks on preview; app-level verification was done locally and via authenticated user session.
