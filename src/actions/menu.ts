@@ -1,5 +1,6 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { requirePermission } from "@/lib/session"
 
@@ -9,6 +10,13 @@ const MAX_STOCK = 999_999
 
 function invalid(message: string): never {
   throw new Error(message)
+}
+
+/** Keeps the admin menu table and the kasir terminal in sync after a change. */
+function revalidateMenuViews(): void {
+  revalidatePath("/admin/menus")
+  revalidatePath("/admin")
+  revalidatePath("/kasir")
 }
 
 export async function createMenu(input: {
@@ -43,6 +51,8 @@ export async function createMenu(input: {
     },
   })
 
+  revalidateMenuViews()
+
   return menu
 }
 
@@ -72,7 +82,7 @@ export async function updateMenu(
     invalid("Stok tidak valid.")
   }
 
-  return prisma.menu.update({
+  const menu = await prisma.menu.update({
     where: { id },
     data: {
       name,
@@ -83,13 +93,21 @@ export async function updateMenu(
       active: input.active,
     },
   })
+
+  revalidateMenuViews()
+
+  return menu
 }
 
 export async function setMenuActive(id: string, active: boolean) {
   await requirePermission("menu:manage")
 
-  return prisma.menu.update({
+  const menu = await prisma.menu.update({
     where: { id },
     data: { active },
   })
+
+  revalidateMenuViews()
+
+  return menu
 }

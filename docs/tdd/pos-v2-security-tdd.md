@@ -138,6 +138,27 @@ Verifikasi: build, tsc, lint, 170 unit, coverage ≥80%, **26/26 E2E**, audit 0.
 
 Verifikasi: build, tsc, lint, 171 unit, coverage ≥80%, **27/27 E2E (serial)**, audit 0.
 
+## Menu photo regression (foto seed hilang)
+
+- Root cause: `e2e/menu-image.spec.ts` memakai menu seed **Kopi Suroko** sebagai target
+  unggah. `uploadMenuImage` menghapus blob lama saat mengganti foto, lalu cleanup
+  "Hapus gambar" mengosongkan `Menu.imageUrl` — jadi setiap suite E2E menghapus foto
+  seed di database Neon yang dipakai production.
+- RED: penjaga baru ("foto seed harus tetap ada") gagal — baris Kopi Suroko punya 0
+  gambar setelah suite berjalan.
+- GREEN: spec kini membuat menu sendiri ("Menu Uji Foto E2E") lewat UI admin,
+  mengunggah ke menu itu, menghapus gambarnya lagi, dan menghapus baris fixture-nya
+  via `prisma db execute` di `afterAll`. Penjaga baru membandingkan jumlah foto di
+  tabel admin sebelum/sesudah — foto seed tidak boleh berkurang.
+- Data dipulihkan: foto CC0 Kopi Suroko diunggah ulang ke Blob (88.878 byte) dan
+  `Menu.imageUrl` diisi; isi Blob store = 3 blob, tanpa orphan.
+- Bug turunan yang ditemukan: `createMenu`/`updateMenu`/`setMenuActive` tidak memanggil
+  `revalidatePath`, sehingga daftar menu admin dan terminal kasir tetap menampilkan
+  data lama. RED unit `src/actions/menu.test.ts` (3 gagal) → GREEN setelah revalidasi
+  `/admin/menus`, `/admin`, `/kasir`.
+
+Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **27/27 E2E (serial)**, audit 0.
+
 ## Known gaps
 
 - Vercel SSO still blocks unauthenticated browser/smoke checks on preview; app-level verification was done locally and via authenticated user session.
