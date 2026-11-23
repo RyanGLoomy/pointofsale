@@ -177,26 +177,33 @@ Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **27/27 E2E (serial)**,
 
 Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **29/29 E2E (serial)**, audit 0.
 
-## Login showcase (foto menu di panel brand)
+## Login brand refresh (Aceternity + 21st.dev, copy faktual)
 
-- Permintaan: halaman login terasa kosong + menu "Es Teh Manis" belum punya foto.
-- Foto "Es Teh Manis": `File:NCI_iced_tea.jpg` (Wikimedia Commons, public domain, Renee
-  Comet/NCI), 960×1646 JPEG (226.842 byte), diunggah ke Blob store `menu-images` dan
-  `Menu.imageUrl` diisi. Isi Blob store = 4 blob, tanpa orphan.
-- Panel brand di `src/app/login/LoginForm.tsx` dirapikan jadi satu blok (desktop +
-  mobile) berisi logo, headline, highlights, dan strip 4 foto menu asli; halaman login
-  `src/app/login/page.tsx` mengambil 4 menu aktif yang punya `imageUrl` (urut nama).
-  Foto dekoratif (`aria-hidden`, `alt=""`), jadi tidak menambah beban untuk pembaca layar.
-- Gerak: token CSS `--animate-login-float` (6 s, easing in-out, 6 px, stagger 0,7 s per
-  foto). Tanpa dependency baru; `prefers-reduced-motion` yang sudah ada mematikan semua
-  animasi (termasuk spotlight).
-- RED: `e2e/login-showcase.spec.ts` gagal — `login-showcase` belum ada (2 test gagal).
-- GREEN: 2/2 E2E lolos — ≥3 foto dari host Blob termuat (`naturalWidth > 0`) dan panel
-  brand tetap tampil di layar 390×844.
-- Visual dicek di 1440×900, 1280×720, dan 390×844; panel brand terisi, form login tetap
-  utuh, tidak ada teks tertutup.
+- Permintaan: strip 4 foto menu tidak disuka → dihapus, halaman kembali ke panel brand
+  desktop + header mobile ringkas. Foto Es Teh Manis tetap terpasang di menu/kasir.
+- Sumber desain:
+  - **Aceternity UI** — `TextGenerateEffect` (perkata, blur memudar) dan pola `Grid`
+    (garis halus + mask radial) diambil dari registry publik `ui.aceternity.com/registry`;
+    `Spotlight` tetap dipakai. `TextGenerateEffect` di-vendor ke
+    `src/components/aceternity/text-generate-effect.tsx` dan memakai dependency `motion`
+    (^14.14.0, peer React 19) sesuai registry Aceternity — **satu dependency baru**.
+  - **21st.dev** — pola *split auth* (aside brand + permukaan form bersih, kedalaman
+    radial lembut) diadaptasi manual: registry 21st.dev memerlukan API key, jadi hanya
+    pola layout dan tipografinya yang dipakai, bukan kode salinan.
+- Copy ditulis ulang agar faktual dan spesifik untuk toko, bukan klaim generik:
+  headline "Setiap pesanan tercatat. Setiap stok terhitung.", subline menjelaskan stok
+  berkurang otomatis per transaksi dan satu sumber data untuk laporan, serta 3 baris peran
+  (Kasir: pilih menu/keranjang/struk; Admin: menu/stok/akun/PDF; Owner: omzet/menu
+  terlaris/riwayat). Form memakai judul "Masuk" dan petunjuk kata sandi yang praktis.
+- Aksesibilitas: `[data-text-generate] span` dipaksa `opacity: 1` lewat CSS
+  `@media (prefers-reduced-motion: reduce)` — animasi `motion/react` tidak terkena aturan
+  `animation-duration` global, jadi perlu fallback eksplisit (terverifikasi: opacity 1).
+- RED: `e2e/login-brand.spec.ts` gagal 3/3 (foto masih ada, panel/copy belum ada,
+  span generate belum ada). GREEN: 3/3 lolos. E2E lama `pos.spec.ts` yang mengunci copy
+  lama ("Masuk ke POS" / "Kasir yang rapi") diperbarui ke copy baru, bukan dihapus.
+- Visual dicek di 1440×900, 1280×720, 390×844, dan mode `prefers-reduced-motion`.
 
-Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **31/31 E2E (serial)**, audit 0.
+Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **32/32 E2E (serial)**, audit 0.
 
 ## Known gaps
 

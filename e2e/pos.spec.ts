@@ -49,9 +49,9 @@ test.describe("Login screen", () => {
   test("shows the branded sign-in experience", async ({ page }) => {
     await page.goto("/login")
 
-    await expect(page.getByRole("heading", { name: /Masuk ke POS/ })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Masuk" })).toBeVisible()
     await expect(page.getByRole("button", { name: "Masuk" })).toBeVisible()
-    await expect(page.getByText(/Kasir yang rapi/)).toBeVisible()
+    await expect(page.getByText(/Setiap pesanan tercatat/)).toBeVisible()
   })
 
   test("reveals and hides the password without losing its value", async ({ page }) => {

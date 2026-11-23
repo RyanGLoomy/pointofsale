@@ -4,27 +4,28 @@ import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { getLoginLockState } from "@/actions/auth"
-import { ArrowRight, BarChart3, LockKeyhole, ShieldCheck, ShoppingCart } from "lucide-react"
+import { ArrowRight, BarChart3, Settings2, ShoppingCart } from "lucide-react"
 import type { FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/ui/password-input"
+import { TextGenerateEffect } from "@/components/aceternity/text-generate-effect"
 
-const highlights = [
+const roles = [
   {
     icon: ShoppingCart,
-    title: "Pesanan cepat",
-    description: "Alur kasir ringkas untuk jam sibuk.",
+    title: "Kasir",
+    description: "Pilih menu, susun keranjang, cetak struk.",
+  },
+  {
+    icon: Settings2,
+    title: "Admin",
+    description: "Kelola menu, stok, akun pengguna, unduh laporan PDF.",
   },
   {
     icon: BarChart3,
-    title: "Laporan jelas",
-    description: "Pantau penjualan dan menu terlaris.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Akses teratur",
-    description: "Peran kasir, admin, dan owner terpisah.",
+    title: "Owner",
+    description: "Lihat omzet harian, menu terlaris, dan riwayat transaksi.",
   },
 ]
 
@@ -35,35 +36,7 @@ interface FieldErrors {
   password?: string
 }
 
-interface LoginFormProps {
-  photos: string[]
-}
-
-/** Strip foto menu asli supaya halaman login terasa hidup, bukan kosong. */
-function MenuShowcase({ photos }: { photos: string[] }) {
-  if (photos.length === 0) return null
-
-  return (
-    <ul
-      aria-hidden="true"
-      data-testid="login-showcase"
-      className="relative z-10 mt-5 grid grid-cols-4 gap-2 sm:gap-3 lg:mt-8"
-    >
-      {photos.map((src, index) => (
-        <li
-          key={src}
-          className="aspect-square animate-login-float overflow-hidden rounded-xl shadow-[0_18px_40px_-24px_rgba(0,0,0,0.8)] ring-1 ring-white/25 lg:aspect-[4/3]"
-          style={{ animationDelay: `${index * 0.7}s` }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt="" className="h-full w-full object-cover" />
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-export function LoginForm({ photos }: LoginFormProps) {
+export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
@@ -127,63 +100,84 @@ export function LoginForm({ photos }: LoginFormProps) {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,rgba(31,93,72,0.10),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(232,220,195,0.55),transparent_60%)]"
+      />
+
       <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_50px_120px_-50px_rgba(0,0,0,0.45)] lg:grid-cols-[1.05fr_1fr]">
-        <section className="relative flex flex-col overflow-hidden bg-ember p-6 sm:p-8 lg:p-10">
+        <section
+          data-testid="login-brand-panel"
+          className="relative hidden flex-col justify-between gap-8 overflow-hidden bg-ember p-10 lg:flex"
+        >
+          <div aria-hidden="true" className="login-panel-grid pointer-events-none absolute inset-0" />
           <div
             aria-hidden="true"
             data-testid="login-spotlight-desktop"
-            className="pointer-events-none absolute -left-28 -top-28 hidden h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(232,220,195,0.42)_0%,rgba(232,220,195,0)_68%)] lg:block animate-login-spotlight"
-          />
-          <div
-            aria-hidden="true"
-            data-testid="login-spotlight-mobile"
-            className="pointer-events-none absolute -left-6 -top-8 h-36 w-36 rounded-full bg-[radial-gradient(circle,rgba(232,220,195,0.30)_0%,rgba(232,220,195,0)_70%)] lg:hidden animate-login-spotlight"
+            className="pointer-events-none absolute -left-28 -top-28 h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(232,220,195,0.42)_0%,rgba(232,220,195,0)_68%)] animate-login-spotlight"
           />
 
           <div className="relative z-10 flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="" width={237} height={320} className="h-10 w-auto object-contain lg:h-12" />
+            <img src="/logo.png" alt="" width={237} height={320} className="h-12 w-auto object-contain" />
             <span className="text-sm font-bold leading-tight tracking-tight text-[#f4f1e9]">
               RM Gerobak Hayam Taman Sari
             </span>
           </div>
 
-          <h2 className="relative z-10 mt-6 max-w-sm font-serif leading-[1.1] tracking-tight text-[#f4f1e9] lg:mt-10 lg:text-4xl">
-            Kasir yang rapi. <span className="text-[#e8dcc3]">Laporan yang jelas.</span>
-          </h2>
-          <p className="relative z-10 mt-3 max-w-sm text-sm leading-relaxed text-[#d8d0bf] lg:mt-4">
-            Satu tempat untuk pesanan, stok, dan performa toko.
-          </p>
+          <div className="relative z-10">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#c9c0ae]">
+              Sistem kasir internal
+            </p>
+            <h2 className="mt-4 font-serif text-[2.6rem] leading-[1.12] tracking-tight text-[#f4f1e9]">
+              <TextGenerateEffect words="Setiap pesanan tercatat. Setiap stok terhitung." />
+            </h2>
+            <p className="mt-5 max-w-sm text-sm leading-relaxed text-[#d8d0bf]">
+              Stok berkurang otomatis pada setiap transaksi, sehingga menu, stok, dan laporan harian
+              berasal dari satu sumber data yang sama.
+            </p>
+          </div>
 
-          <ul className="relative z-10 mt-5 hidden space-y-3 lg:block">
-            {highlights.map((item) => {
-              const Icon = item.icon
-              return (
-                <li key={item.title} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-[#f4f1e9]">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-[#f4f1e9]">{item.title}</p>
-                    <p className="text-xs text-[#d8d0bf]">{item.description}</p>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-
-          <MenuShowcase photos={photos} />
-
-          <p className="relative z-10 mt-5 text-[11px] text-[#c9c0ae] lg:mt-6">Sistem kasir internal.</p>
+          <div className="relative z-10">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#c9c0ae]">Peran akses</p>
+            <ul className="mt-3 divide-y divide-white/10 border-y border-white/10">
+              {roles.map((role) => {
+                const Icon = role.icon
+                return (
+                  <li key={role.title} className="flex items-start gap-3 py-3">
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/10 text-[#f4f1e9]">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-[#f4f1e9]">{role.title}</p>
+                      <p className="text-xs text-[#d8d0bf]">{role.description}</p>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
         </section>
 
-        <section className="p-6 sm:p-10">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-ember">Selamat datang</p>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-ink">Masuk ke POS</h1>
+        <section className="flex flex-col justify-center p-6 sm:p-10">
+          <div className="relative flex items-center gap-2.5 lg:hidden">
+            <div
+              aria-hidden="true"
+              data-testid="login-spotlight-mobile"
+              className="pointer-events-none absolute -left-4 -top-6 h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(31,93,72,0.22)_0%,rgba(31,93,72,0)_70%)] animate-login-spotlight"
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="" width={237} height={320} className="relative z-10 h-9 w-auto object-contain" />
+            <span className="relative z-10 text-sm font-bold leading-tight tracking-tight text-ink">
+              RM Gerobak Hayam Taman Sari
+            </span>
+          </div>
+
+          <div className="mt-8 lg:mt-0">
+            <h1 className="text-2xl font-extrabold tracking-tight text-ink">Masuk</h1>
             <p className="mt-1.5 text-sm text-muted">
-              Gunakan akun kasir, admin, atau owner untuk melanjutkan.
+              Gunakan akun kasir, admin, atau owner dari pengelola gerobak.
             </p>
           </div>
 
@@ -248,12 +242,7 @@ export function LoginForm({ photos }: LoginFormProps) {
             </Button>
           </form>
 
-          <div className="mt-6 rounded-xl border border-line bg-surface-2 p-3">
-            <p className="flex items-center gap-2 text-[11px] text-muted">
-              <LockKeyhole className="h-3.5 w-3.5" />
-              Akses dibatasi sesuai peran akun.
-            </p>
-          </div>
+          <p className="mt-6 text-xs text-muted">Lupa kata sandi? Hubungi pengelola gerobak.</p>
         </section>
       </div>
     </main>
