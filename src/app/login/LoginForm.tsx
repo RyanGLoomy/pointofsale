@@ -101,8 +101,13 @@ export function LoginForm() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_50px_120px_-50px_rgba(0,0,0,0.45)] lg:grid-cols-[1.05fr_1fr]">
-        <section className="hidden flex-col justify-between overflow-hidden bg-ember p-10 lg:flex">
-          <div>
+        <section className="relative hidden flex-col justify-between overflow-hidden bg-ember p-10 lg:flex">
+          <div
+            aria-hidden="true"
+            data-testid="login-spotlight-desktop"
+            className="pointer-events-none absolute -left-28 -top-28 h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(232,220,195,0.42)_0%,rgba(232,220,195,0)_68%)] animate-login-spotlight"
+          />
+          <div className="relative z-10">
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logo.png" alt="" width={237} height={320} className="h-12 w-auto object-contain" />
@@ -136,14 +141,19 @@ export function LoginForm() {
             </ul>
           </div>
 
-          <p className="mt-6 text-[11px] text-[#c9c0ae]">Sistem kasir internal.</p>
+          <p className="relative z-10 mt-6 text-[11px] text-[#c9c0ae]">Sistem kasir internal.</p>
         </section>
 
         <section className="p-6 sm:p-10">
-          <div className="flex items-center gap-2.5 lg:hidden">
+          <div className="relative flex items-center gap-2.5 lg:hidden">
+            <div
+              aria-hidden="true"
+              data-testid="login-spotlight-mobile"
+              className="pointer-events-none absolute -left-4 -top-6 h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(31,93,72,0.22)_0%,rgba(31,93,72,0)_70%)] animate-login-spotlight"
+            />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="" width={237} height={320} className="h-9 w-auto object-contain" />
-            <span className="text-sm font-bold leading-tight tracking-tight text-ink">
+            <img src="/logo.png" alt="" width={237} height={320} className="relative z-10 h-9 w-auto object-contain" />
+            <span className="relative z-10 text-sm font-bold leading-tight tracking-tight text-ink">
               RM Gerobak Hayam Taman Sari
             </span>
           </div>

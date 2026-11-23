@@ -159,6 +159,24 @@ Verifikasi: build, tsc, lint, 171 unit, coverage ≥80%, **27/27 E2E (serial)**,
 
 Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **27/27 E2E (serial)**, audit 0.
 
+## Login motion (spotlight)
+
+- Sumber: adaptasi **Aceternity UI – Spotlight** (`ui.aceternity.com/components/spotlight`),
+  direkolor ke krem/amber agar cocok dengan brand "Pasar" (panel hijau `#1f5d48`).
+  Komponen 21st.dev yang ditinjau ("Modern Animated Sign In", "Pro Sign-in Animation")
+  di-skip: tema biru gelap tidak cocok, butuh dependency `motion` + API key, dan
+  mengubah struktur login.
+- Implementasi CSS-only: token `--animate-login-spotlight` + `@keyframes login-spotlight`
+  di `src/app/globals.css`, layer dekoratif di `src/app/login/LoginForm.tsx`
+  (`aria-hidden`, `pointer-events-none`, konten `z-10`). Tidak ada dependency baru.
+- RED: `e2e/login-motion.spec.ts` gagal karena layer dekoratif belum ada.
+- GREEN: 2/2 E2E lolos — layer dekoratif, `pointer-events: none`, animasi terdaftar
+  (durasi 1800 ms), dan `prefers-reduced-motion` membuat durasi < 0,05 s.
+- Visual dicek di 1440×900 dan 390×844: cahaya hangat muncul di area logo, teks tetap
+  terbaca jelas.
+
+Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **29/29 E2E (serial)**, audit 0.
+
 ## Known gaps
 
 - Vercel SSO still blocks unauthenticated browser/smoke checks on preview; app-level verification was done locally and via authenticated user session.

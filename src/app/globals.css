@@ -17,6 +17,18 @@
   --font-sans: var(--font-sans);
   --font-serif: var(--font-serif);
   --font-mono: var(--font-mono);
+  --animate-login-spotlight: login-spotlight 1.8s ease-out 0.2s 1 forwards;
+}
+
+@keyframes login-spotlight {
+  0% {
+    opacity: 0;
+    transform: translate(-22%, -14%) scale(0.72);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
 }
 
 :root {
