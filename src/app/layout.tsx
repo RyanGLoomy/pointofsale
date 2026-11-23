@@ -25,10 +25,11 @@ const mono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Point of Sale — Kasir, Admin & Owner",
-    template: "%s · Point of Sale",
+    default: "RM Gerobak Hayam Taman Sari — Kasir, Admin & Owner",
+    template: "%s · RM Gerobak Hayam Taman Sari",
   },
-  description: "Sistem point of sale untuk mengelola pesanan, menu, stok, dan laporan penjualan.",
+  description:
+    "Sistem kasir RM Gerobak Hayam Taman Sari untuk mengelola pesanan, menu, stok, dan laporan penjualan.",
 }
 
 export default async function RootLayout({

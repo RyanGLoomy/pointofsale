@@ -103,11 +103,12 @@ export function LoginForm() {
       <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_50px_120px_-50px_rgba(0,0,0,0.45)] lg:grid-cols-[1.05fr_1fr]">
         <section className="hidden flex-col justify-between overflow-hidden bg-ember p-10 lg:flex">
           <div>
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f4f1e9] text-[#1f5d48]">
-                <ShoppingCart className="h-5 w-5" />
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="" width={237} height={320} className="h-12 w-auto object-contain" />
+              <span className="text-sm font-bold leading-tight tracking-tight text-[#f4f1e9]">
+                RM Gerobak Hayam Taman Sari
               </span>
-              <span className="text-sm font-bold tracking-tight text-[#f4f1e9]">Point of Sale</span>
             </div>
 
             <h2 className="mt-10 max-w-sm text-4xl font-serif leading-[1.1] tracking-tight text-[#f4f1e9]">
@@ -135,15 +136,16 @@ export function LoginForm() {
             </ul>
           </div>
 
-          <p className="mt-6 text-[11px] text-[#c9c0ae]">Sistem point of sale internal.</p>
+          <p className="mt-6 text-[11px] text-[#c9c0ae]">Sistem kasir internal.</p>
         </section>
 
         <section className="p-6 sm:p-10">
           <div className="flex items-center gap-2.5 lg:hidden">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f4f1e9] text-[#1f5d48]">
-              <ShoppingCart className="h-4 w-4" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="" width={237} height={320} className="h-9 w-auto object-contain" />
+            <span className="text-sm font-bold leading-tight tracking-tight text-ink">
+              RM Gerobak Hayam Taman Sari
             </span>
-            <span className="text-sm font-bold tracking-tight text-ink">Point of Sale</span>
           </div>
 
           <div className="mt-8 lg:mt-0">

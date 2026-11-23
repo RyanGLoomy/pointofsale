@@ -122,6 +122,22 @@ Verifikasi: build, tsc, lint, 170 unit, coverage ≥80%, **26/26 E2E**, audit 0.
 - Tiga menu awal diberi foto CC0 dari Wikimedia Commons, diunggah ke Blob, dan `Menu.imageUrl` diisi (lihat `docs/menu-images.md`).
 - Verifikasi browser di URL production: 3 tile kasir memuat gambar dari host Blob (`naturalWidth=960`), 0 pelanggaran CSP.
 
+## Shop branding (RM Gerobak Hayam Taman Sari)
+
+- Source artwork: the shop's own logo (transparent PNG), trimmed with Pillow and
+  stored as `public/logo.png` (237×320, palette PNG, 22 KB). Favicon derived from
+  the same art at `src/app/icon.png` (64×64).
+- RED: `src/lib/receipt.test.ts` expected `STORE_PROFILE.name` to be the shop name
+  (failed with "Point of Sale"); `e2e/branding.spec.ts` failed because no
+  `img[src="/logo.png"]` existed. GREEN after the swap.
+- Name changes: sidebar brand lockup (`RM Gerobak Hayam` + `TAMAN SARI`), both login
+  brand marks, `<title>`/description metadata, and `STORE_PROFILE.name` used by the
+  printed receipt and PDF report.
+- No CSP change needed: local `/logo.png` is `'self'`.
+- Verified visually at 1440×900 and 390×844; `/icon.png` serves `image/png`.
+
+Verifikasi: build, tsc, lint, 171 unit, coverage ≥80%, **27/27 E2E (serial)**, audit 0.
+
 ## Known gaps
 
 - Vercel SSO still blocks unauthenticated browser/smoke checks on preview; app-level verification was done locally and via authenticated user session.

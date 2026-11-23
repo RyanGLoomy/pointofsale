@@ -124,15 +124,18 @@ export function Sidebar({ role, name, email }: { role: string; name: string; ema
       <div className="hidden items-center gap-2.5 px-4 pb-1 pt-5 md:flex">
         <Link
           href="/kasir"
-          aria-label="Point of Sale"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ember text-[#f4f1e9] shadow-[0_18px_38px_-18px_rgba(31,93,72,0.55)]"
+          aria-label="RM Gerobak Hayam Taman Sari"
+          className="shrink-0"
         >
-          <ShoppingCart className="h-5 w-5" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="" width={237} height={320} className="h-11 w-auto object-contain" />
         </Link>
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold tracking-tight text-ink">Point of Sale</p>
+          <p className="truncate text-[13px] font-bold leading-tight tracking-tight text-ink">
+            RM Gerobak Hayam
+          </p>
           <p className="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
-            Terminal kasir
+            Taman Sari
           </p>
         </div>
       </div>
