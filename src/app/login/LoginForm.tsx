@@ -4,7 +4,7 @@ import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { getLoginLockState } from "@/actions/auth"
-import { ArrowRight, BarChart3, LockKeyhole, ShieldCheck, ShoppingCart, Store } from "lucide-react"
+import { ArrowRight, BarChart3, LockKeyhole, ShieldCheck, ShoppingCart } from "lucide-react"
 import type { FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Field, Input } from "@/components/ui/input"
@@ -105,7 +105,7 @@ export function LoginForm() {
           <div>
             <div className="flex items-center gap-2.5">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f4f1e9] text-[#1f5d48]">
-                <Store className="h-5 w-5" />
+                <ShoppingCart className="h-5 w-5" />
               </span>
               <span className="text-sm font-bold tracking-tight text-[#f4f1e9]">Point of Sale</span>
             </div>
@@ -141,7 +141,7 @@ export function LoginForm() {
         <section className="p-6 sm:p-10">
           <div className="flex items-center gap-2.5 lg:hidden">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f4f1e9] text-[#1f5d48]">
-              <Store className="h-4 w-4" />
+              <ShoppingCart className="h-4 w-4" />
             </span>
             <span className="text-sm font-bold tracking-tight text-ink">Point of Sale</span>
           </div>

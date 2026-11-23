@@ -13,7 +13,6 @@ import {
   LogOut,
   ReceiptText,
   ShoppingCart,
-  Store,
   Users,
   UtensilsCrossed,
 } from "lucide-react"
@@ -128,7 +127,7 @@ export function Sidebar({ role, name, email }: { role: string; name: string; ema
           aria-label="Point of Sale"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ember text-[#f4f1e9] shadow-[0_18px_38px_-18px_rgba(31,93,72,0.55)]"
         >
-          <Store className="h-5 w-5" />
+          <ShoppingCart className="h-5 w-5" />
         </Link>
         <div className="min-w-0">
           <p className="truncate text-sm font-bold tracking-tight text-ink">Point of Sale</p>
