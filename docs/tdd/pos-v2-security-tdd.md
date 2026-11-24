@@ -231,6 +231,27 @@ Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **32/32 E2E (serial)**,
 Verifikasi: build, tsc, lint, 174 unit, coverage ≥80%, **36/36 E2E (serial)**, audit 0,
 dependency-analyzer 0 outdated/0 vulnerable/0 unused.
 
+## Botanical login backdrop (Refero + jiro.build research)
+
+- Riset referensi: `jiro.build` (library prompt komponen — tidak ada kategori login; konsep
+  *Light Rays* diadaptasi), `kage.design` (galeri form signup/contact — pola wash pastel + kartu
+  putih), `styles.refero.design` (halaman *form design prompts* — Ease Health "botanical
+  greenhouse on cream paper" jadi arah warna). Hasil: konsep **Botanical Warm + Soft Rays**.
+- **Akar masalah yang ditemukan**: layer latar lama ber-`-z-10` ternyata dicat *di belakang*
+  background `body`, jadi glow halaman tidak pernah terlihat sejak redesign sebelumnya. Layer
+  dekoratif dipindah ke `z-0` dan kartu dinaikkan ke `z-10`.
+- Implementasi: `.login-wash` (radial hijau/amber + linear krem, drift `transform` 24 s) dan
+  `.login-rays` (conic-gradient kipas cahaya krem/ember, sway `transform`/`opacity` 26 s).
+  Keduanya `aria-hidden` + `pointer-events: none`; tidak ada blur beranimasi, `background-position`,
+  atau inline style (CSP nonce).
+- RED: `e2e/login-botanical.spec.ts` 2/2 gagal (layer belum ada). GREEN: 2/2 lolos; seluruh spec
+  login lama (11/11) tetap hijau. Reduced motion menghentikan wash & rays (durasi < 0,05 s).
+- Verifikasi visual: 1440×900 dan 390×844; wash krem hangat, tint hijau pojok kiri atas, amber
+  kanan bawah, dan pita cahaya halus terlihat tanpa mengganggu kontras kartu form.
+
+Verifikasi: build, tsc, lint, 174 unit (100% stmt/func/line, 96,93% branch), **38/38 E2E (serial)**,
+grep rahasia/console.log bersih.
+
 ## Known gaps
 
 - Vercel SSO still blocks unauthenticated browser/smoke checks on preview; app-level verification was done locally and via authenticated user session.

@@ -40,6 +40,47 @@
   mask-image: radial-gradient(ellipse at 25% 15%, black 0%, transparent 70%);
 }
 
+/* Botanical wash: krem hangat yang bergeser pelan. Hanya transform yang bergerak. */
+.login-wash {
+  inset: -12%;
+  background:
+    radial-gradient(ellipse 60% 50% at 18% 8%, rgba(31, 93, 72, 0.14), transparent 62%),
+    radial-gradient(ellipse 55% 45% at 88% 92%, rgba(180, 138, 78, 0.16), transparent 65%),
+    linear-gradient(160deg, #faf7ee 0%, #f4edda 55%, #eee1c7 100%);
+  animation: login-wash-drift 24s ease-in-out infinite alternate;
+}
+@keyframes login-wash-drift {
+  from { transform: translate3d(-1.5%, -1%, 0) scale(1.02); }
+  to { transform: translate3d(1.5%, 1%, 0) scale(1.06); }
+}
+
+/* Adaptasi jiro.build — "Light Rays": kipas cahaya krem/ember dari atas layar.
+   Conic gradient statis; elemennya yang bergeser memakai transform/opacity. */
+.login-rays {
+  inset: -20%;
+  background: conic-gradient(
+    from 100deg at 50% -12%,
+    transparent 0deg 18deg,
+    rgba(255, 252, 240, 0.5) 20deg 22deg,
+    transparent 24deg 43deg,
+    rgba(180, 138, 78, 0.2) 45deg 48deg,
+    transparent 50deg 73deg,
+    rgba(255, 252, 240, 0.75) 75deg 78deg,
+    transparent 80deg 103deg,
+    rgba(255, 252, 240, 0.45) 105deg 107deg,
+    transparent 109deg 130deg,
+    rgba(31, 93, 72, 0.12) 132deg 135deg,
+    transparent 137deg
+  );
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent 80%);
+  opacity: 0.7;
+  animation: login-rays-sway 26s ease-in-out infinite alternate;
+}
+@keyframes login-rays-sway {
+  from { transform: rotate(-2deg) translate3d(-1%, 0, 0); opacity: 0.5; }
+  to { transform: rotate(2deg) translate3d(1%, 0, 0); opacity: 0.75; }
+}
+
 /* Adaptasi Aceternity UI — "Aurora Background". Radial gradient menggantikan
    filter blur agar layer tetap murah; hanya transform/opacity yang bergerak. */
 .aurora-blob {

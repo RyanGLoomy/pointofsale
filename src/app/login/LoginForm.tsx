@@ -105,10 +105,16 @@ export function LoginForm() {
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,rgba(31,93,72,0.10),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(232,220,195,0.55),transparent_60%)]"
+        data-testid="login-wash"
+        className="login-wash pointer-events-none absolute z-0"
+      />
+      <div
+        aria-hidden="true"
+        data-testid="login-rays"
+        className="login-rays pointer-events-none absolute z-0"
       />
 
-      <div className="relative grid w-full max-w-5xl overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_50px_120px_-50px_rgba(0,0,0,0.45)] lg:grid-cols-[1.05fr_1fr]">
+      <div className="relative z-10 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_50px_120px_-50px_rgba(0,0,0,0.45)] lg:grid-cols-[1.05fr_1fr]">
         <ShineBorder />
         <section
           data-testid="login-brand-panel"
